@@ -62,7 +62,7 @@ Weiblocks is a production-ready blockchain and AI development firm with 6+ years
 - MBD Financials CEO: Highlights production-ready DeFi infrastructure
 
 ## CONTACT & LOCATIONS
-- **Email:** [email protected]
+- **Email:** hi@weiblocks.io
 - **Phone:** +1 302-366-3496
 - **Austin HQ:** 5900 Balcones Dr #21292, Austin, TX 78731
 - **Beaverton Office:** 9450 Southwest Gemini Drive, Beaverton, OR 97008
@@ -91,7 +91,7 @@ Weiblocks is a production-ready blockchain and AI development firm with 6+ years
 4. **Always include a CTA** – For serious inquiries, always mention:
    - "Book a free consultation at weiblocks.io"
    - Or "Call us at +1 302-366-3496"
-   - Or "Email us at [email protected]"
+   - Or "Email us at hi@weiblocks.io"
 
 5. **Stay focused** – If asked about topics unrelated to Weiblocks or software/blockchain/AI development, politely redirect: "I'm specialized in Weiblocks services. For that topic, I'd recommend searching online. Is there anything I can help you with regarding our blockchain or AI development services?"
 

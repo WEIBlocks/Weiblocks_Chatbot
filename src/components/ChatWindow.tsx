@@ -19,9 +19,174 @@ interface ChatWindowProps {
 
 const WELCOME_MESSAGE: Message = {
   role: 'assistant',
-  content: "👋 Hi there! I'm Weiblocks' AI assistant. I'm here to help you learn about our blockchain and AI development services.\n\nWhether you're looking to build a **DeFi platform**, **AI agent**, **smart contracts**, or need **staff augmentation** — I can help you explore the right solution.\n\nWhat can I help you with today?",
+  content: "Hi! I'm Weiblocks' AI assistant — your guide to blockchain & AI development.\n\nI can help you explore our services, discuss your project idea, or connect you with our team. What are you building?",
   timestamp: new Date(),
 };
+
+const QUICK_REPLIES = [
+  { label: '🤖 AI Development', msg: 'Tell me about your AI development services' },
+  { label: '⛓️ Blockchain', msg: 'What blockchain solutions do you offer?' },
+  { label: '💎 DeFi & NFTs', msg: 'Do you build DeFi platforms and NFT marketplaces?' },
+  { label: '👥 Hire Devs', msg: 'I want to hire blockchain developers' },
+];
+
+const CSS = `
+  .wb-cw {
+    display: flex; flex-direction: column; height: 100%;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #07070f;
+  }
+
+  /* ─── Header ─── */
+  .wb-hdr {
+    background: linear-gradient(160deg, #0e0e22 0%, #121228 100%);
+    padding: 15px 16px;
+    display: flex; align-items: center; gap: 11px;
+    border-bottom: 1px solid rgba(245,164,80,0.1);
+    position: relative; flex-shrink: 0;
+  }
+  .wb-hdr::after {
+    content: ''; position: absolute;
+    bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(245,164,80,0.3), transparent);
+  }
+  .wb-av {
+    width: 44px; height: 44px; border-radius: 14px;
+    flex-shrink: 0; overflow: hidden;
+    box-shadow: 0 4px 16px rgba(245,164,80,0.4);
+    position: relative;
+  }
+  .wb-av-dot {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #22c55e; border: 2.5px solid #07070f;
+    box-shadow: 0 0 8px rgba(34,197,94,0.8);
+    animation: wb-blink 2.5s ease-in-out infinite;
+  }
+  @keyframes wb-blink { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+  .wb-hinfo { flex: 1; min-width: 0; }
+  .wb-hname { color: #fff; font-weight: 700; font-size: 14.5px; letter-spacing: -0.2px; }
+  .wb-hstat {
+    color: rgba(255,255,255,0.38); font-size: 11px;
+    margin-top: 2px; display: flex; align-items: center; gap: 5px;
+  }
+  .wb-hsdot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #22c55e; box-shadow: 0 0 5px #22c55e;
+  }
+
+  .wb-hbook {
+    padding: 7px 13px;
+    background: rgba(245,164,80,0.1);
+    border: 1px solid rgba(245,164,80,0.25);
+    border-radius: 11px;
+    color: #F5A450; font-size: 11.5px; font-weight: 700;
+    text-decoration: none; white-space: nowrap; flex-shrink: 0;
+    transition: all 0.18s; font-family: inherit; cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .wb-hbook:hover { background: rgba(245,164,80,0.18); border-color: rgba(245,164,80,0.45); }
+
+  .wb-hclose {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.32); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.18s;
+  }
+  .wb-hclose:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+  /* ─── Messages ─── */
+  .wb-msgs {
+    flex: 1; overflow-y: auto;
+    padding: 18px 13px 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245,164,80,0.15) transparent;
+    background:
+      radial-gradient(ellipse at 15% 85%, rgba(245,164,80,0.035) 0%, transparent 60%),
+      radial-gradient(ellipse at 85% 15%, rgba(188,64,62,0.04) 0%, transparent 60%),
+      #07070f;
+  }
+  .wb-msgs::-webkit-scrollbar { width: 3px; }
+  .wb-msgs::-webkit-scrollbar-thumb { background: rgba(245,164,80,0.18); border-radius: 2px; }
+
+  .wb-datesep {
+    text-align: center; color: rgba(255,255,255,0.16);
+    font-size: 10px; margin: 0 0 18px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .wb-datesep::before, .wb-datesep::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+  }
+
+  /* ─── Quick replies ─── */
+  .wb-qzone {
+    padding: 9px 13px 11px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    background: rgba(0,0,0,0.32); flex-shrink: 0;
+  }
+  .wb-qbtn {
+    padding: 6px 12px;
+    background: rgba(245,164,80,0.06);
+    border: 1px solid rgba(245,164,80,0.18);
+    border-radius: 100px;
+    color: rgba(245,164,80,0.82);
+    font-size: 11.5px; font-weight: 600;
+    cursor: pointer; transition: all 0.18s;
+    font-family: inherit; white-space: nowrap;
+  }
+  .wb-qbtn:hover {
+    background: rgba(245,164,80,0.14);
+    border-color: rgba(245,164,80,0.42);
+    color: #F5A450; transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245,164,80,0.12);
+  }
+
+  /* ─── Input ─── */
+  .wb-izone {
+    padding: 11px 13px 13px;
+    display: flex; gap: 9px; align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    background: rgba(0,0,0,0.42); flex-shrink: 0;
+  }
+  .wb-inp {
+    flex: 1; padding: 11px 17px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(245,164,80,0.14);
+    border-radius: 100px; color: #fff;
+    font-size: 13.5px; outline: none; font-family: inherit;
+    transition: border-color 0.2s, background 0.2s;
+    caret-color: #F5A450;
+  }
+  .wb-inp::placeholder { color: rgba(255,255,255,0.2); }
+  .wb-inp:focus { border-color: rgba(245,164,80,0.38); background: rgba(255,255,255,0.07); }
+  .wb-inp:disabled { opacity: 0.6; }
+
+  .wb-sbtn {
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, #F5A450, #c06010);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(245,164,80,0.45);
+  }
+  .wb-sbtn:hover:not(:disabled) { transform: scale(1.09); box-shadow: 0 6px 22px rgba(245,164,80,0.6); }
+  .wb-sbtn:active:not(:disabled) { transform: scale(0.93); }
+  .wb-sbtn:disabled { background: rgba(255,255,255,0.07); box-shadow: none; cursor: not-allowed; }
+
+  /* ─── Footer ─── */
+  .wb-foot {
+    text-align: center; padding: 5px 0 9px;
+    font-size: 10px; color: rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.42); flex-shrink: 0; letter-spacing: 0.2px;
+  }
+  .wb-foot a { color: rgba(245,164,80,0.4); text-decoration: none; }
+  .wb-foot a:hover { color: #F5A450; }
+`;
 
 export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
@@ -32,328 +197,148 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
   const [currentProjectType, setCurrentProjectType] = useState('General');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
   const apiBase = widgetUrl || '';
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading, showLeadForm, scrollToBottom]);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { scrollToBottom(); }, [messages, isLoading, showLeadForm, scrollToBottom]);
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 120); }, []);
 
   async function sendMessage(text?: string) {
-    const messageText = text || input.trim();
-    if (!messageText || isLoading) return;
-
-    const userMessage: Message = {
-      role: 'user',
-      content: messageText,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const msg = (text || input).trim();
+    if (!msg || isLoading) return;
     setInput('');
     setIsLoading(true);
+    setMessages(prev => [...prev, { role: 'user', content: msg, timestamp: new Date() }]);
 
     try {
       const res = await fetch(`${apiBase}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: messageText,
-          sessionId,
-          history: messages.slice(-8).map(m => ({ role: m.role, content: m.content })),
+          message: msg, sessionId,
+          history: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
         }),
       });
-
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to get response');
+      if (!res.ok) throw new Error(data.error);
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.reply,
-        timestamp: new Date(),
-      };
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply, timestamp: new Date() }]);
 
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Show lead form if intent detected and not already shown
       if (data.intent?.isLead && !showLeadForm && !leadSubmitted) {
         setCurrentProjectType(data.intent.projectType || 'General');
-        // Small delay to let user read the response first
-        setTimeout(() => setShowLeadForm(true), 800);
+        setTimeout(() => setShowLeadForm(true), 900);
       }
-    } catch (err) {
-      const errorMessage: Message = {
+    } catch {
+      setMessages(prev => [...prev, {
         role: 'assistant',
-        content: "I'm having a bit of trouble right now. Please try again, or reach us directly at [email protected] or +1 302-366-3496.",
+        content: "I'm having trouble connecting. Please reach out directly:\n\n- Email: hi@weiblocks.io\n- Phone: +1 302-366-3496",
         timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      console.error('Chat error:', err);
+      }]);
     } finally {
       setIsLoading(false);
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  const quickReplies = [
-    '🤖 AI Services',
-    '⛓️ Blockchain Dev',
-    '💰 DeFi Platforms',
-    '💼 Hire a Team',
-  ];
-
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      background: 'linear-gradient(180deg, #0d0d1a 0%, #12121f 100%)',
-      borderRadius: '20px',
-      overflow: 'hidden',
-      boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,164,80,0.2)',
-      fontFamily: 'DM Sans, Roboto, -apple-system, sans-serif',
-    }}>
+    <>
+      <style>{CSS}</style>
+      <div className="wb-cw">
 
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%)',
-        borderBottom: '1px solid rgba(245,164,80,0.2)',
-        padding: '14px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        flexShrink: 0,
-      }}>
-        {/* Logo/Avatar */}
-        <div style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, #F5A450, #BC403E)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 900,
-          fontSize: '18px',
-          color: '#fff',
-          flexShrink: 0,
-          boxShadow: '0 4px 12px rgba(245,164,80,0.35)',
-        }}>W</div>
-
-        <div style={{ flex: 1 }}>
-          <div style={{ color: '#fff', fontWeight: 700, fontSize: '15px', lineHeight: 1.2 }}>
-            Weiblocks AI
+        {/* Header */}
+        <div className="wb-hdr">
+          <div className="wb-av">
+            <img src="/weiblocks.png" alt="Weiblocks" style={{ width: '44px', height: '44px', objectFit: 'cover', display: 'block' }} />
           </div>
-          <div style={{ color: '#4ade80', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-            <span style={{
-              width: '7px', height: '7px', borderRadius: '50%',
-              background: '#4ade80',
-              display: 'inline-block',
-              boxShadow: '0 0 6px #4ade80',
-            }}></span>
-            Online · Typically replies instantly
+          <div className="wb-hinfo">
+            <div className="wb-hname">Weiblocks AI</div>
+            <div className="wb-hstat">
+              <span className="wb-hsdot" />
+              Online · Replies instantly
+            </div>
           </div>
+          <a href="https://weiblocks.io/contact" target="_blank" rel="noopener noreferrer" className="wb-hbook">
+            📅 Book Call
+          </a>
+          <button className="wb-hclose" onClick={onClose} aria-label="Close chat">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M9 1L1 9M1 1l8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
 
-        {/* Book a Call button */}
-        <a
-          href="https://weiblocks.io/contact"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: '7px 12px',
-            background: 'linear-gradient(135deg, #F5A450, #B76D28)',
-            borderRadius: '8px',
-            color: '#fff',
-            fontSize: '12px',
-            fontWeight: 700,
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          Book a Call
-        </a>
+        {/* Messages */}
+        <div className="wb-msgs">
+          <div className="wb-datesep">Today</div>
 
-        {/* Close */}
-        <button
-          onClick={onClose}
-          style={{
-            background: 'rgba(255,255,255,0.08)',
-            border: 'none',
-            borderRadius: '8px',
-            color: 'rgba(255,255,255,0.6)',
-            cursor: 'pointer',
-            fontSize: '16px',
-            width: '30px',
-            height: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-          aria-label="Close chat"
-        >✕</button>
-      </div>
-
-      {/* Messages */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '16px 12px 8px',
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(245,164,80,0.3) transparent',
-      }}>
-        {messages.map((msg, idx) => (
-          <MessageBubble key={idx} message={msg} />
-        ))}
-
-        {isLoading && (
-          <div style={{ padding: '0 4px' }}>
-            <TypingIndicator />
-          </div>
-        )}
-
-        {/* Lead Form */}
-        {showLeadForm && !leadSubmitted && (
-          <LeadForm
-            sessionId={sessionId}
-            projectType={currentProjectType}
-            widgetUrl={apiBase}
-            onClose={() => setShowLeadForm(false)}
-            onSuccess={() => {
-              setLeadSubmitted(true);
-              setShowLeadForm(false);
-              const thankYouMsg: Message = {
-                role: 'assistant',
-                content: "✅ **Thank you!** We've received your details and our team will reach out to you shortly.\n\nIn the meantime, feel free to browse our portfolio at **weiblocks.io** or call us directly at **+1 302-366-3496**.",
-                timestamp: new Date(),
-              };
-              setMessages(prev => [...prev, thankYouMsg]);
-            }}
-          />
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Quick replies (shown only initially) */}
-      {messages.length <= 1 && (
-        <div style={{
-          padding: '8px 12px',
-          display: 'flex',
-          gap: '6px',
-          flexWrap: 'wrap',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
-          flexShrink: 0,
-        }}>
-          {quickReplies.map((reply) => (
-            <button
-              key={reply}
-              onClick={() => sendMessage(reply.replace(/^[^\s]+\s/, ''))}
-              style={{
-                padding: '6px 12px',
-                background: 'rgba(245,164,80,0.1)',
-                border: '1px solid rgba(245,164,80,0.3)',
-                borderRadius: '20px',
-                color: '#F5A450',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: 'inherit',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {reply}
-            </button>
+          {messages.map((msg, idx) => (
+            <MessageBubble key={idx} message={msg} />
           ))}
+
+          {isLoading && <TypingIndicator />}
+
+          {showLeadForm && !leadSubmitted && (
+            <LeadForm
+              sessionId={sessionId}
+              projectType={currentProjectType}
+              widgetUrl={apiBase}
+              onClose={() => setShowLeadForm(false)}
+              onSuccess={() => {
+                setLeadSubmitted(true);
+                setShowLeadForm(false);
+                setMessages(prev => [...prev, {
+                  role: 'assistant',
+                  content: "**Perfect!** We've received your details.\n\nOur team will reach out within 24 hours. In the meantime:\n\n- Browse our work at **weiblocks.io**\n- Call us at **+1 302-366-3496**\n- Email **hi@weiblocks.io**",
+                  timestamp: new Date(),
+                }]);
+              }}
+            />
+          )}
+          <div ref={messagesEndRef} />
         </div>
-      )}
 
-      {/* Input */}
-      <div style={{
-        padding: '12px',
-        borderTop: '1px solid rgba(245,164,80,0.15)',
-        display: 'flex',
-        gap: '8px',
-        alignItems: 'center',
-        flexShrink: 0,
-        background: 'rgba(0,0,0,0.2)',
-      }}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask about our services..."
-          disabled={isLoading}
-          style={{
-            flex: 1,
-            padding: '11px 16px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(245,164,80,0.25)',
-            borderRadius: '24px',
-            color: '#fff',
-            fontSize: '14px',
-            outline: 'none',
-            fontFamily: 'inherit',
-            transition: 'border-color 0.2s',
-          }}
-        />
-        <button
-          onClick={() => sendMessage()}
-          disabled={isLoading || !input.trim()}
-          aria-label="Send message"
-          style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            background: input.trim() && !isLoading
-              ? 'linear-gradient(135deg, #F5A450, #B76D28)'
-              : 'rgba(245,164,80,0.2)',
-            border: 'none',
-            cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            transition: 'all 0.2s',
-            boxShadow: input.trim() && !isLoading ? '0 4px 12px rgba(245,164,80,0.35)' : 'none',
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      </div>
+        {/* Quick Replies */}
+        {messages.length <= 1 && (
+          <div className="wb-qzone">
+            {QUICK_REPLIES.map(r => (
+              <button key={r.label} className="wb-qbtn" onClick={() => sendMessage(r.msg)}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+        )}
 
-      {/* Footer */}
-      <div style={{
-        textAlign: 'center',
-        padding: '6px',
-        fontSize: '10px',
-        color: 'rgba(255,255,255,0.25)',
-        flexShrink: 0,
-      }}>
-        Powered by <a href="https://weiblocks.io" target="_blank" rel="noopener noreferrer" style={{ color: '#F5A450', textDecoration: 'none' }}>Weiblocks</a>
+        {/* Input */}
+        <div className="wb-izone">
+          <input
+            ref={inputRef}
+            className="wb-inp"
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}}
+            placeholder="Ask me anything..."
+            disabled={isLoading}
+          />
+          <button
+            className="wb-sbtn"
+            onClick={() => sendMessage()}
+            disabled={isLoading || !input.trim()}
+            aria-label="Send message"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="wb-foot">
+          Powered by <a href="https://weiblocks.io" target="_blank" rel="noopener noreferrer">Weiblocks</a>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

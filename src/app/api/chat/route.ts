@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           reply:
-            "I'm temporarily unavailable due to API limits. Please contact us directly at [email protected] or call **+1 302-366-3496**. We'd love to discuss your project!",
+            "I'm temporarily unavailable due to API limits. Please contact us directly at hi@weiblocks.io or call **+1 302-366-3496**. We'd love to discuss your project!",
           intent,
           sessionId: null,
         },

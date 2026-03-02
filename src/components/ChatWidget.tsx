@@ -25,119 +25,173 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
   const [sessionId, setSessionId] = useState('');
   const [hasNotification, setHasNotification] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setSessionId(getOrCreateSessionId());
-    // Show notification dot initially, hide after opening
+    const t1 = setTimeout(() => setShowTooltip(true), 3000);
+    const t2 = setTimeout(() => setShowTooltip(false), 8000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   function toggleChat() {
     setIsOpen(prev => !prev);
     setHasNotification(false);
+    setShowTooltip(false);
   }
 
   if (!mounted) return null;
 
   return (
     <>
-      {/* Global CSS */}
       <style>{`
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(245,164,80,0.4); border-radius: 2px; }
-        @keyframes wb-fadeIn {
-          from { opacity: 0; transform: scale(0.95) translateY(10px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
+        .wb-root * { box-sizing: border-box; }
+
+        @keyframes wb-slideUp {
+          from { opacity: 0; transform: translateY(24px) scale(0.95); }
+          to   { opacity: 1; transform: translateY(0)   scale(1); }
         }
-        @keyframes wb-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(245,164,80,0.4); }
-          50% { box-shadow: 0 0 0 10px rgba(245,164,80,0); }
+        @keyframes wb-pulse-ring {
+          0%   { transform: scale(1);   opacity: 0.7; }
+          100% { transform: scale(1.8); opacity: 0; }
+        }
+        @keyframes wb-bounce-in {
+          0%   { transform: scale(0.3); opacity: 0; }
+          60%  { transform: scale(1.15); opacity: 1; }
+          100% { transform: scale(1); }
+        }
+        @keyframes wb-float {
+          0%,100% { transform: translateY(0px); }
+          50%      { transform: translateY(-4px); }
+        }
+        @keyframes wb-shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+
+        .wb-fab {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          z-index: 2147483647;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #F5A450 0%, #e0883a 40%, #C84B35 100%);
+          box-shadow: 0 6px 28px rgba(245,164,80,0.55), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+          transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
+          animation: wb-float 4s ease-in-out infinite;
+          overflow: visible;
+        }
+        .wb-fab:hover {
+          transform: scale(1.12) translateY(-3px);
+          box-shadow: 0 14px 40px rgba(245,164,80,0.7), 0 4px 16px rgba(0,0,0,0.4);
+          animation: none;
+        }
+        .wb-fab:active { transform: scale(0.94); }
+
+        .wb-ring {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          border: 2px solid rgba(245,164,80,0.55);
+          animation: wb-pulse-ring 2.2s ease-out infinite;
+          pointer-events: none;
+        }
+        .wb-ring-2 { animation-delay: 0.7s; }
+
+        .wb-badge {
+          position: absolute;
+          top: -3px; right: -3px;
+          width: 20px; height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff5252, #c62828);
+          border: 2.5px solid #fff;
+          font-size: 10px; font-weight: 800;
+          color: #fff;
+          display: flex; align-items: center; justify-content: center;
+          animation: wb-bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+          box-shadow: 0 2px 10px rgba(255,82,82,0.6);
+        }
+
+        .wb-tip {
+          position: fixed;
+          bottom: 104px; right: 24px;
+          background: rgba(8,8,18,0.96);
+          backdrop-filter: blur(24px);
+          border: 1px solid rgba(245,164,80,0.25);
+          border-radius: 18px;
+          padding: 12px 18px;
+          color: #fff;
+          font-size: 13.5px;
+          font-weight: 500;
+          white-space: nowrap;
+          z-index: 2147483646;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+          animation: wb-slideUp 0.35s ease;
+          pointer-events: none;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .wb-tip::after {
+          content: '';
+          position: absolute;
+          bottom: -6px; right: 28px;
+          width: 11px; height: 11px;
+          background: rgba(8,8,18,0.96);
+          border-right: 1px solid rgba(245,164,80,0.25);
+          border-bottom: 1px solid rgba(245,164,80,0.25);
+          transform: rotate(45deg);
+        }
+
+        .wb-window {
+          position: fixed;
+          bottom: 104px; right: 24px;
+          width: 400px; height: 610px;
+          z-index: 2147483646;
+          animation: wb-slideUp 0.32s cubic-bezier(0.16,1,0.3,1);
+          border-radius: 28px;
+          overflow: hidden;
+          box-shadow:
+            0 40px 100px rgba(0,0,0,0.75),
+            0 0 0 1px rgba(255,255,255,0.07),
+            inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        @media (max-width: 460px) {
+          .wb-window { bottom:0;right:0;left:0;width:100%;height:100dvh;border-radius:0; }
+          .wb-fab   { bottom:16px;right:16px; }
+          .wb-tip   { bottom:96px;right:16px; }
         }
       `}</style>
 
-      {/* Chat Window */}
-      {isOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '90px',
-            right: '20px',
-            width: '380px',
-            height: '560px',
-            zIndex: 2147483646,
-            animation: 'wb-fadeIn 0.25s ease',
-            borderRadius: '20px',
-            overflow: 'hidden',
-          }}
-        >
-          <ChatWindow
-            onClose={() => setIsOpen(false)}
-            sessionId={sessionId}
-            widgetUrl={widgetUrl}
-          />
-        </div>
-      )}
-
-      {/* Floating Button */}
-      <button
-        onClick={toggleChat}
-        aria-label={isOpen ? 'Close chat' : 'Open Weiblocks chat'}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '60px',
-          height: '60px',
-          borderRadius: '50%',
-          background: isOpen
-            ? 'linear-gradient(135deg, #B76D28, #8B4513)'
-            : 'linear-gradient(135deg, #F5A450, #B76D28)',
-          border: 'none',
-          cursor: 'pointer',
-          zIndex: 2147483647,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 8px 32px rgba(245,164,80,0.45), 0 4px 16px rgba(0,0,0,0.3)',
-          transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          animation: !isOpen ? 'wb-pulse 2.5s infinite' : 'none',
-          transform: isOpen ? 'rotate(0deg)' : 'rotate(0deg)',
-        }}
-      >
-        {/* Notification dot */}
-        {hasNotification && !isOpen && (
-          <div style={{
-            position: 'absolute',
-            top: '2px',
-            right: '2px',
-            width: '14px',
-            height: '14px',
-            borderRadius: '50%',
-            background: '#BC403E',
-            border: '2px solid #fff',
-            fontSize: '8px',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-          }}>1</div>
+      <div className="wb-root">
+        {showTooltip && !isOpen && (
+          <div className="wb-tip">
+            <span style={{ color: '#F5A450', fontWeight: 700 }}>👋 Hi there! </span>
+            Got questions? I&apos;m here to help!
+          </div>
         )}
 
-        {/* Icon */}
-        {isOpen ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-          </svg>
-        ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M8 10h8M8 14h5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+        {isOpen && (
+          <div className="wb-window">
+            <ChatWindow onClose={() => setIsOpen(false)} sessionId={sessionId} widgetUrl={widgetUrl} />
+          </div>
         )}
-      </button>
+
+        <button className="wb-fab" onClick={toggleChat} aria-label={isOpen ? 'Close' : 'Open Weiblocks AI'}>
+          {!isOpen && <><span className="wb-ring" /><span className="wb-ring wb-ring-2" /></>}
+          {hasNotification && !isOpen && <span className="wb-badge">1</span>}
+          {isOpen
+            ? <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
+            : <img src="/weiblocks.png" alt="Weiblocks" style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '50%' }} />
+          }
+        </button>
+      </div>
     </>
   );
 }

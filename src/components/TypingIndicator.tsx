@@ -5,33 +5,48 @@ export default function TypingIndicator() {
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '4px',
-      padding: '12px 16px',
-      background: '#1e1e2e',
-      borderRadius: '18px 18px 18px 4px',
-      width: 'fit-content',
-      marginBottom: '8px',
+      gap: '12px',
+      marginBottom: '16px',
+      padding: '0 2px',
     }}>
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: '#F5A450',
-            animation: 'wb-bounce 1.4s infinite ease-in-out',
-            animationDelay: `${i * 0.16}s`,
+      {/* Avatar */}
+      <img src="/weiblocks.png" alt="Weiblocks" style={{
+        width: '30px', height: '30px', borderRadius: '10px',
+        objectFit: 'cover', flexShrink: 0,
+        boxShadow: '0 2px 10px rgba(245,164,80,0.35)',
+      }} />
+
+      {/* Bubble */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px',
+        padding: '12px 18px',
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(245,164,80,0.12)',
+        borderRadius: '18px 18px 18px 4px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+      }}>
+        {[0, 1, 2].map((i) => (
+          <span key={i} style={{
+            width: '7px', height: '7px', borderRadius: '50%',
+            background: `rgba(245,164,80,${0.9 - i * 0.1})`,
             display: 'block',
-          }}
-        />
-      ))}
-      <style>{`
-        @keyframes wb-bounce {
-          0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-          40% { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
+            animation: 'wb-typing 1.3s ease-in-out infinite',
+            animationDelay: `${i * 0.18}s`,
+          }} />
+        ))}
+        <style>{`
+          @keyframes wb-typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30%            { transform: translateY(-6px); opacity: 1; }
+          }
+        `}</style>
+      </div>
+
+      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
+        typing...
+      </span>
     </div>
   );
 }
