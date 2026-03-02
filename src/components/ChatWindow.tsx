@@ -32,9 +32,10 @@ const QUICK_REPLIES = [
 
 const CSS = `
   .wb-cw {
-    display: flex; flex-direction: column; height: 100%;
+    display: flex; flex-direction: column; height: 100%; min-height: 0;
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     background: #07070f;
+    overflow: hidden;
   }
 
   /* ─── Header ─── */
@@ -100,7 +101,7 @@ const CSS = `
 
   /* ─── Messages ─── */
   .wb-msgs {
-    flex: 1; overflow-y: auto;
+    flex: 1; overflow-y: auto; min-height: 0;
     padding: 18px 13px 10px;
     scrollbar-width: thin;
     scrollbar-color: rgba(245,164,80,0.15) transparent;
@@ -125,11 +126,13 @@ const CSS = `
 
   /* ─── Quick replies ─── */
   .wb-qzone {
-    padding: 9px 13px 11px;
-    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 8px 13px 10px;
+    display: flex; gap: 6px; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
     border-top: 1px solid rgba(255,255,255,0.04);
     background: rgba(0,0,0,0.32); flex-shrink: 0;
   }
+  .wb-qzone::-webkit-scrollbar { display: none; }
   .wb-qbtn {
     padding: 6px 12px;
     background: rgba(245,164,80,0.06);
@@ -138,7 +141,7 @@ const CSS = `
     color: rgba(245,164,80,0.82);
     font-size: 11.5px; font-weight: 600;
     cursor: pointer; transition: all 0.18s;
-    font-family: inherit; white-space: nowrap;
+    font-family: inherit; white-space: nowrap; flex-shrink: 0;
   }
   .wb-qbtn:hover {
     background: rgba(245,164,80,0.14);
@@ -186,6 +189,26 @@ const CSS = `
   }
   .wb-foot a { color: rgba(245,164,80,0.4); text-decoration: none; }
   .wb-foot a:hover { color: #F5A450; }
+
+  /* ─── Short screen compacting ─── */
+  @media (max-height: 600px) {
+    .wb-hdr  { padding: 10px 14px; }
+    .wb-av   { width: 36px; height: 36px; border-radius: 11px; }
+    .wb-hname { font-size: 13.5px; }
+    .wb-izone { padding: 8px 11px 10px; }
+    .wb-inp   { padding: 9px 15px; font-size: 13px; }
+    .wb-sbtn  { width: 38px; height: 38px; }
+    .wb-msgs  { padding: 12px 11px 8px; }
+    .wb-foot  { padding: 3px 0 6px; }
+    .wb-qzone { padding: 6px 11px 8px; }
+  }
+  @media (max-height: 450px) {
+    .wb-hdr  { padding: 8px 12px; }
+    .wb-av   { width: 32px; height: 32px; border-radius: 9px; }
+    .wb-hbook { display: none; }
+    .wb-foot  { display: none; }
+    .wb-msgs  { padding: 8px 10px 6px; }
+  }
 `;
 
 export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindowProps) {
