@@ -11,6 +11,30 @@ interface Message {
   timestamp: Date;
 }
 
+// localStorage keys & memory config
+const STORAGE_HISTORY_KEY = 'weiblocks_chat_history';
+const STORAGE_LEAD_KEY    = 'weiblocks_lead_submitted';
+const MAX_MESSAGES = 20; // trigger trim above this
+const TRIM_TO      = 15; // keep last N messages after trim
+
+function loadHistory(welcomeMsg: Message): Message[] {
+  if (typeof window === 'undefined') return [welcomeMsg];
+  try {
+    const raw = localStorage.getItem(STORAGE_HISTORY_KEY);
+    if (!raw) return [welcomeMsg];
+    const parsed = JSON.parse(raw) as Array<{ role: string; content: string; timestamp: string }>;
+    if (!Array.isArray(parsed) || parsed.length === 0) return [welcomeMsg];
+    return parsed.map(m => ({ ...m, timestamp: new Date(m.timestamp) })) as Message[];
+  } catch {
+    return [welcomeMsg];
+  }
+}
+
+function loadLeadSubmitted(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(STORAGE_LEAD_KEY) === 'true';
+}
+
 interface ChatWindowProps {
   onClose: () => void;
   sessionId: string;
@@ -210,11 +234,11 @@ const CSS = `
 `;
 
 export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindowProps) {
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>(() => loadHistory(WELCOME_MESSAGE));
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
-  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [leadSubmitted, setLeadSubmitted] = useState<boolean>(() => loadLeadSubmitted());
   const [currentProjectType, setCurrentProjectType] = useState('General');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -226,6 +250,21 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
 
   useEffect(() => { scrollToBottom(); }, [messages, isLoading, showLeadForm, scrollToBottom]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 120); }, []);
+
+  // Persist chat history to localStorage; trim when too long
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const toSave = messages.length > MAX_MESSAGES
+      ? messages.slice(messages.length - TRIM_TO)
+      : messages;
+    localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(toSave));
+  }, [messages]);
+
+  // Persist lead-submitted flag
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_LEAD_KEY, String(leadSubmitted));
+  }, [leadSubmitted]);
 
   async function sendMessage(text?: string) {
     const msg = (text || input).trim();
@@ -292,7 +331,14 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
 
         {/* Messages */}
         <div className="wb-msgs">
-          <div className="wb-datesep">Today</div>
+          <div className="wb-datesep">{(() => {
+            const ts = messages[0]?.timestamp;
+            if (!ts) return 'Today';
+            const d = new Date(ts);
+            return d.toDateString() === new Date().toDateString()
+              ? 'Today'
+              : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+          })()}</div>
 
           {messages.map((msg, idx) => (
             <MessageBubble key={idx} message={msg} />

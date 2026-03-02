@@ -14,13 +14,15 @@ export default function LeadForm({ sessionId, projectType, onClose, onSuccess, w
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (!name.trim() || !email.trim()) { setError('Name and email are required.'); return; }
+    if (!name.trim() || !email.trim() || !subject.trim()) { setError('Name, email, and subject are required.'); return; }
 
     setLoading(true);
     try {
@@ -31,7 +33,8 @@ export default function LeadForm({ sessionId, projectType, onClose, onSuccess, w
           sessionId, name: name.trim(), email: email.trim(),
           phone: phone.trim() || undefined,
           projectType: projectType || 'General',
-          message: `Interested in ${projectType || 'Weiblocks services'}`,
+          subject: subject.trim(),
+          message: message.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -51,6 +54,11 @@ export default function LeadForm({ sessionId, projectType, onClose, onSuccess, w
     borderRadius: '12px', color: '#fff', fontSize: '13.5px',
     outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
     transition: 'border-color 0.2s, background 0.2s',
+  };
+
+  const ta: React.CSSProperties = {
+    ...inp, borderRadius: '12px', resize: 'none',
+    height: '76px', paddingTop: '10px', lineHeight: '1.5',
   };
 
   return (
@@ -117,6 +125,18 @@ export default function LeadForm({ sessionId, projectType, onClose, onSuccess, w
           placeholder="Phone (optional)" value={phone}
           onChange={e => setPhone(e.target.value)}
           style={inp} disabled={loading}
+        />
+        <input
+          className="wb-finput" type="text"
+          placeholder="Subject *" value={subject}
+          onChange={e => setSubject(e.target.value)}
+          style={inp} required disabled={loading}
+        />
+        <textarea
+          className="wb-finput"
+          placeholder="Message (optional)" value={message}
+          onChange={e => setMessage(e.target.value)}
+          style={ta} disabled={loading}
         />
 
         {error && (
