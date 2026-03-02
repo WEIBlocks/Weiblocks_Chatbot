@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/widget.js',
+        destination: '/api/widget-script',
+      },
+    ];
+  },
   async headers() {
     return [
       {
