@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { openai, WEIBLOCKS_SYSTEM_PROMPT } from '@/lib/openai';
+import { callGemini } from '@/lib/gemini';
 import { connectDB } from '@/lib/mongodb';
 import { detectIntent } from '@/lib/intentDetector';
 import Conversation from '@/models/Conversation';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*' };
+
+// AI_PROVIDER env: 'gemini' (default) | 'openai'
+const AI_PROVIDER = process.env.AI_PROVIDER || 'gemini';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -29,30 +33,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Detect lead intent from current message (before OpenAI call)
+    // Detect lead intent from current message (before AI call)
     intent = detectIntent(message);
 
-    // Build messages for OpenAI
-    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-      { role: 'system', content: WEIBLOCKS_SYSTEM_PROMPT },
-      ...history.slice(-10).map((m: { role: string; content: string }) => ({
+    const cleanHistory = history
+      .slice(-10)
+      .map((m: { role: string; content: string }) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
-      })),
-      { role: 'user', content: message },
-    ];
+      }));
 
-    // Call OpenAI GPT-4o-mini
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      max_tokens: 600,
-      temperature: 0.7,
-    });
+    let reply = '';
 
-    const reply =
-      completion.choices[0]?.message?.content ??
-      "I'm sorry, I couldn't generate a response. Please try again.";
+    if (AI_PROVIDER === 'gemini') {
+      // ── Gemini 2.5 Flash ──────────────────────────────────────────
+      reply = await callGemini(WEIBLOCKS_SYSTEM_PROMPT, cleanHistory, message);
+    } else {
+      // ── OpenAI GPT-4o-mini ────────────────────────────────────────
+      const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+        { role: 'system', content: WEIBLOCKS_SYSTEM_PROMPT },
+        ...cleanHistory,
+        { role: 'user', content: message },
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        max_tokens: 600,
+        temperature: 0.7,
+      });
+
+      reply =
+        completion.choices[0]?.message?.content ??
+        "I'm sorry, I couldn't generate a response. Please try again.";
+    }
 
     // Save conversation to MongoDB asynchronously (non-blocking)
     connectDB()
@@ -80,7 +94,6 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error('Chat API error:', error);
 
-    // Handle OpenAI quota/billing errors gracefully with friendly message + still return intent
     const isQuotaError =
       typeof error === 'object' &&
       error !== null &&
