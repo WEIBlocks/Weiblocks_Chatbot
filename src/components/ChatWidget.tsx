@@ -175,11 +175,12 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
           .wb-tip    { display: none; }
         }
 
-        /* Narrow screens — full screen */
+        /* Narrow screens — full screen, hide FAB when open */
         @media (max-width: 460px) {
           .wb-window { bottom:0;right:0;left:0;width:100%;height:100dvh;max-height:100dvh;border-radius:0; }
           .wb-fab    { bottom:16px;right:16px; }
           .wb-tip    { bottom:96px;right:16px; }
+          .wb-fab.wb-open { display: none; }
         }
 
         /* Narrow + short (e.g. small phones landscape) */
@@ -203,7 +204,7 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
           </div>
         )}
 
-        <button className="wb-fab" onClick={toggleChat} aria-label={isOpen ? 'Close' : 'Open Weiblocks AI'}>
+        <button className={`wb-fab${isOpen ? ' wb-open' : ''}`} onClick={toggleChat} aria-label={isOpen ? 'Close' : 'Open Weiblocks AI'}>
           {!isOpen && <><span className="wb-ring" /><span className="wb-ring wb-ring-2" /></>}
           {hasNotification && !isOpen && <span className="wb-badge">1</span>}
           {isOpen

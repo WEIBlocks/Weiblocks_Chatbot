@@ -127,12 +127,10 @@ const CSS = `
   /* ─── Quick replies ─── */
   .wb-qzone {
     padding: 8px 13px 10px;
-    display: flex; gap: 6px; flex-wrap: nowrap;
-    overflow-x: auto; scrollbar-width: none;
+    display: flex; gap: 6px; flex-wrap: wrap;
     border-top: 1px solid rgba(255,255,255,0.04);
     background: rgba(0,0,0,0.32); flex-shrink: 0;
   }
-  .wb-qzone::-webkit-scrollbar { display: none; }
   .wb-qbtn {
     padding: 6px 12px;
     background: rgba(245,164,80,0.06);
@@ -141,7 +139,7 @@ const CSS = `
     color: rgba(245,164,80,0.82);
     font-size: 11.5px; font-weight: 600;
     cursor: pointer; transition: all 0.18s;
-    font-family: inherit; white-space: nowrap; flex-shrink: 0;
+    font-family: inherit; white-space: nowrap;
   }
   .wb-qbtn:hover {
     background: rgba(245,164,80,0.14);
