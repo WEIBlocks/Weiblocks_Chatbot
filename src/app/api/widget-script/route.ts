@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       'border: none',
       'background: transparent',
       'z-index: 2147483646',
-      'pointer-events: none'
+      'pointer-events: all'
     ].join('; ');
     iframe.setAttribute('title', 'Weiblocks AI Assistant');
     iframe.setAttribute('allow', 'microphone');
