@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function WidgetPage() {
   return (
-    <div style={{ background: 'transparent', minHeight: '100vh' }}>
+    <div style={{ background: 'transparent', width: '100vw', height: '100vh', overflow: 'hidden', pointerEvents: 'none' }}>
       <ChatWidget />
     </div>
   );

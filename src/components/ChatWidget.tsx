@@ -47,6 +47,8 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
     <>
       <style>{`
         .wb-root * { box-sizing: border-box; }
+        .wb-root { pointer-events: none; }
+        .wb-root .wb-fab, .wb-root .wb-window, .wb-root .wb-tip { pointer-events: all; }
 
         @keyframes wb-slideUp {
           from { opacity: 0; transform: translateY(24px) scale(0.95); }
@@ -74,8 +76,8 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
           position: fixed;
           bottom: 24px;
           right: 24px;
-          width: 64px;
-          height: 64px;
+          width: 52px;
+          height: 52px;
           border-radius: 50%;
           border: none;
           cursor: pointer;
@@ -186,7 +188,7 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
         /* Narrow + short (e.g. small phones landscape) */
         @media (max-width: 460px) and (max-height: 500px) {
           .wb-window { height: 100dvh; border-radius: 0; }
-          .wb-fab    { bottom: 12px; right: 12px; width: 52px; height: 52px; }
+          .wb-fab    { bottom: 12px; right: 12px; width: 44px; height: 44px; }
         }
       `}</style>
 
@@ -208,8 +210,8 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
           {!isOpen && <><span className="wb-ring" /><span className="wb-ring wb-ring-2" /></>}
           {hasNotification && !isOpen && <span className="wb-badge">1</span>}
           {isOpen
-            ? <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
-            : <img src="/weiblocks.png" alt="Weiblocks" style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '50%' }} />
+            ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
+            : <img src="/weiblocks.png" alt="Weiblocks" style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: '50%' }} />
           }
         </button>
       </div>
