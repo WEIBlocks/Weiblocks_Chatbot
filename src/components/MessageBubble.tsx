@@ -13,13 +13,38 @@ function formatTime(ts?: Date | string): string {
 
 const LINK_STYLE = 'color:#F5A450;text-decoration:underline;text-underline-offset:2px;';
 
+const LINK_BUTTON_STYLE = [
+  'display:inline-flex',
+  'align-items:center',
+  'gap:6px',
+  'padding:8px 16px',
+  'margin:4px 4px 4px 0',
+  'background:rgba(245,164,80,0.1)',
+  'border:1px solid rgba(245,164,80,0.35)',
+  'border-radius:100px',
+  'color:#F5A450',
+  'font-size:12.5px',
+  'font-weight:600',
+  'text-decoration:none',
+  'cursor:pointer',
+  'transition:all 0.18s',
+  'font-family:inherit',
+  'white-space:nowrap',
+  'line-height:1.4',
+].join(';');
+
 function linkify(text: string): string {
+  // Markdown-style links [Button Text](URL) → styled button links
+  text = text.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    `<a href="$2" style="${LINK_BUTTON_STYLE}" target="_blank" rel="noopener noreferrer" onmouseover="this.style.background='rgba(245,164,80,0.2)';this.style.borderColor='rgba(245,164,80,0.6)';this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(245,164,80,0.15)'" onmouseout="this.style.background='rgba(245,164,80,0.1)';this.style.borderColor='rgba(245,164,80,0.35)';this.style.transform='none';this.style.boxShadow='none'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>$1</a>`
+  );
   // emails
   text = text.replace(
     /([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g,
     `<a href="mailto:$1" style="${LINK_STYLE}" target="_blank" rel="noopener noreferrer">$1</a>`
   );
-  // URLs (http/https) — skip if already inside an href
+  // URLs (http/https) — skip if already inside an href or button
   text = text.replace(
     /(?<!href=")(https?:\/\/[^\s<"']+)/g,
     `<a href="$1" style="${LINK_STYLE}" target="_blank" rel="noopener noreferrer">$1</a>`
