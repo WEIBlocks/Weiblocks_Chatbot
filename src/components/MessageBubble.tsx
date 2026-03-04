@@ -13,38 +13,16 @@ function formatTime(ts?: Date | string): string {
 
 const LINK_STYLE = 'color:#F5A450;text-decoration:underline;text-underline-offset:2px;';
 
-const LINK_BUTTON_STYLE = [
-  'display:inline-flex',
-  'align-items:center',
-  'gap:6px',
-  'padding:8px 16px',
-  'margin:4px 4px 4px 0',
-  'background:rgba(245,164,80,0.1)',
-  'border:1px solid rgba(245,164,80,0.35)',
-  'border-radius:100px',
-  'color:#F5A450',
-  'font-size:12.5px',
-  'font-weight:600',
-  'text-decoration:none',
-  'cursor:pointer',
-  'transition:all 0.18s',
-  'font-family:inherit',
-  'white-space:nowrap',
-  'line-height:1.4',
-].join(';');
+// Regex to detect markdown links: [text](url)
+const MD_LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
 
 function linkify(text: string): string {
-  // Markdown-style links [Button Text](URL) → styled button links
-  text = text.replace(
-    /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-    `<a href="$2" style="${LINK_BUTTON_STYLE}" target="_blank" rel="noopener noreferrer" onmouseover="this.style.background='rgba(245,164,80,0.2)';this.style.borderColor='rgba(245,164,80,0.6)';this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(245,164,80,0.15)'" onmouseout="this.style.background='rgba(245,164,80,0.1)';this.style.borderColor='rgba(245,164,80,0.35)';this.style.transform='none';this.style.boxShadow='none'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>$1</a>`
-  );
   // emails
   text = text.replace(
     /([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g,
     `<a href="mailto:$1" style="${LINK_STYLE}" target="_blank" rel="noopener noreferrer">$1</a>`
   );
-  // URLs (http/https) — skip if already inside an href or button
+  // URLs (http/https) — skip if already inside an href
   text = text.replace(
     /(?<!href=")(https?:\/\/[^\s<"']+)/g,
     `<a href="$1" style="${LINK_STYLE}" target="_blank" rel="noopener noreferrer">$1</a>`
@@ -57,17 +35,86 @@ function linkify(text: string): string {
   return text;
 }
 
+/** Extract markdown links from a line, return { cleaned, links[] } */
+function extractLinks(line: string): { cleaned: string; links: { text: string; url: string }[] } {
+  const links: { text: string; url: string }[] = [];
+  const cleaned = line.replace(MD_LINK_RE, (_match, text, url) => {
+    links.push({ text, url });
+    return ''; // remove from text
+  }).replace(/→\s*$/, '').trimEnd(); // remove trailing → arrow
+  return { cleaned, links };
+}
+
+function LinkButton({ text, url }: { text: string; url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '8px 16px',
+        margin: '4px 4px 4px 0',
+        background: 'rgba(245,164,80,0.1)',
+        border: '1px solid rgba(245,164,80,0.35)',
+        borderRadius: '100px',
+        color: '#F5A450',
+        fontSize: '12.5px',
+        fontWeight: 600,
+        textDecoration: 'none',
+        cursor: 'pointer',
+        transition: 'all 0.18s',
+        fontFamily: 'inherit',
+        whiteSpace: 'nowrap',
+        lineHeight: 1.4,
+      }}
+      onMouseEnter={e => {
+        const t = e.currentTarget;
+        t.style.background = 'rgba(245,164,80,0.2)';
+        t.style.borderColor = 'rgba(245,164,80,0.6)';
+        t.style.transform = 'translateY(-1px)';
+        t.style.boxShadow = '0 4px 12px rgba(245,164,80,0.15)';
+      }}
+      onMouseLeave={e => {
+        const t = e.currentTarget;
+        t.style.background = 'rgba(245,164,80,0.1)';
+        t.style.borderColor = 'rgba(245,164,80,0.35)';
+        t.style.transform = 'none';
+        t.style.boxShadow = 'none';
+      }}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      {text}
+    </a>
+  );
+}
+
 function renderContent(content: string) {
   const lines = content.split('\n');
-  return lines.map((line, i) => {
+  const collectedLinks: { text: string; url: string }[] = [];
+  const elements: React.ReactNode[] = [];
+
+  lines.forEach((line, i) => {
+    // Extract markdown links from this line
+    const { cleaned, links } = extractLinks(line);
+    if (links.length > 0) collectedLinks.push(...links);
+
+    // If line was ONLY a link (no other text), skip rendering it as a line
+    if (!cleaned.trim() && links.length > 0) return;
+
     const html = linkify(
-      line
+      cleaned
         .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#F5A450;font-weight:700">$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
     );
 
-    if (line.trim().startsWith('- ') || line.trim().startsWith('• ')) {
-      return (
+    if (cleaned.trim().startsWith('- ') || cleaned.trim().startsWith('• ')) {
+      elements.push(
         <div key={i} style={{ display: 'flex', gap: '8px', marginTop: i > 0 ? '5px' : 0, alignItems: 'flex-start' }}>
           <span style={{
             width: '5px', height: '5px', borderRadius: '50%',
@@ -77,13 +124,28 @@ function renderContent(content: string) {
           <span dangerouslySetInnerHTML={{ __html: html.replace(/^[-•]\s+/, '') }} />
         </div>
       );
+    } else if (line === '') {
+      elements.push(<div key={i} style={{ height: '6px' }} />);
+    } else {
+      elements.push(
+        <p key={i} style={{ margin: '1px 0', lineHeight: 1.55 }}
+          dangerouslySetInnerHTML={{ __html: html }} />
+      );
     }
-    if (line === '') return <div key={i} style={{ height: '6px' }} />;
-    return (
-      <p key={i} style={{ margin: '1px 0', lineHeight: 1.55 }}
-        dangerouslySetInnerHTML={{ __html: html }} />
-    );
   });
+
+  // Render all collected link buttons at the bottom
+  if (collectedLinks.length > 0) {
+    elements.push(
+      <div key="link-buttons" style={{ display: 'flex', flexWrap: 'wrap', marginTop: '8px', gap: '2px' }}>
+        {collectedLinks.map((link, j) => (
+          <LinkButton key={j} text={link.text} url={link.url} />
+        ))}
+      </div>
+    );
+  }
+
+  return elements;
 }
 
 export default function MessageBubble({ message }: { message: Message }) {
