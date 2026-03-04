@@ -11,6 +11,10 @@ export interface IConversation extends Document {
   messages: IMessage[];
   intentDetected: boolean;
   projectType: string;
+  detectedEmail?: string;
+  summary?: string;
+  status: 'active' | 'completed';
+  closedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +31,10 @@ const ConversationSchema = new Schema<IConversation>(
     messages: [MessageSchema],
     intentDetected: { type: Boolean, default: false },
     projectType: { type: String, default: 'General' },
+    detectedEmail: { type: String },
+    summary: { type: String },
+    status: { type: String, enum: ['active', 'completed'], default: 'active' },
+    closedAt: { type: Date },
   },
   { timestamps: true }
 );

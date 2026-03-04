@@ -9,11 +9,12 @@ interface LeadFormProps {
   onClose: () => void;
   onSuccess: () => void;
   widgetUrl?: string;
+  prefillEmail?: string;
 }
 
-export default function LeadForm({ sessionId, projectType, onClose, onSuccess, widgetUrl }: LeadFormProps) {
+export default function LeadForm({ sessionId, projectType, onClose, onSuccess, widgetUrl, prefillEmail }: LeadFormProps) {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(prefillEmail || '');
   const [phone, setPhone] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');

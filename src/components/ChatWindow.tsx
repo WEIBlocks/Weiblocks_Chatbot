@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, Blocks, Layers, Users, CalendarDays, X, Send } from 'lucide-react';
+import { Bot, Blocks, Layers, Users, CalendarDays, X, Send, Mail } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import LeadForm from './LeadForm';
@@ -15,6 +15,7 @@ interface Message {
 // localStorage keys & memory config
 const STORAGE_HISTORY_KEY = 'weiblocks_chat_history';
 const STORAGE_LEAD_KEY    = 'weiblocks_lead_submitted';
+const STORAGE_EMAIL_KEY   = 'weiblocks_user_email';
 const MAX_MESSAGES = 20; // trigger trim above this
 const TRIM_TO      = 15; // keep last N messages after trim
 
@@ -36,6 +37,11 @@ function loadLeadSubmitted(): boolean {
   return localStorage.getItem(STORAGE_LEAD_KEY) === 'true';
 }
 
+function loadSavedEmail(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(STORAGE_EMAIL_KEY) || '';
+}
+
 interface ChatWindowProps {
   onClose: () => void;
   sessionId: string;
@@ -44,7 +50,7 @@ interface ChatWindowProps {
 
 const WELCOME_MESSAGE: Message = {
   role: 'assistant',
-  content: "Hi! I'm Weiblocks' AI assistant — your guide to blockchain & AI development.\n\nI can help you explore our services, discuss your project idea, or connect you with our team. What are you building?",
+  content: "Hi! I'm Nova — Weiblocks' AI agent, your guide to blockchain & AI development.\n\nI can help you explore our services, discuss your project idea, or connect you with our team. What are you building?",
   timestamp: new Date(),
 };
 
@@ -174,6 +180,58 @@ const CSS = `
     box-shadow: 0 4px 12px rgba(245,164,80,0.12);
   }
 
+  /* ─── Inline email capture ─── */
+  .wb-ec {
+    margin: 4px 0 10px;
+    background: rgba(245,164,80,0.06);
+    border: 1px solid rgba(245,164,80,0.22);
+    border-radius: 16px;
+    padding: 13px 14px;
+    animation: wb-formIn 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes wb-formIn {
+    from { opacity:0; transform:translateY(8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .wb-ec-label {
+    color: rgba(255,255,255,0.45); font-size: 11.5px;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+  }
+  .wb-ec-row {
+    display: flex; gap: 7px; align-items: center;
+  }
+  .wb-ec-inp {
+    flex: 1; padding: 9px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(245,164,80,0.2);
+    border-radius: 100px; color: #fff;
+    font-size: 13px; outline: none; font-family: inherit;
+    transition: border-color 0.2s, background 0.2s;
+    caret-color: #F5A450;
+  }
+  .wb-ec-inp::placeholder { color: rgba(255,255,255,0.22); }
+  .wb-ec-inp:focus { border-color: rgba(245,164,80,0.42); background: rgba(255,255,255,0.07); }
+  .wb-ec-btn {
+    padding: 9px 16px;
+    background: linear-gradient(135deg, #F5A450, #c06010);
+    border: none; border-radius: 100px;
+    color: #fff; font-size: 12.5px; font-weight: 700;
+    cursor: pointer; white-space: nowrap; font-family: inherit;
+    transition: all 0.2s;
+    box-shadow: 0 3px 12px rgba(245,164,80,0.35);
+    flex-shrink: 0;
+  }
+  .wb-ec-btn:hover { transform: scale(1.04); box-shadow: 0 5px 18px rgba(245,164,80,0.5); }
+  .wb-ec-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .wb-ec-skip {
+    background: none; border: none;
+    color: rgba(255,255,255,0.2); font-size: 10.5px;
+    cursor: pointer; margin-top: 6px; text-align: center;
+    width: 100%; font-family: inherit; padding: 2px 0;
+    transition: color 0.2s;
+  }
+  .wb-ec-skip:hover { color: rgba(255,255,255,0.4); }
+
   /* ─── Input ─── */
   .wb-izone {
     padding: 11px 13px 13px;
@@ -242,8 +300,16 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState<boolean>(() => loadLeadSubmitted());
   const [currentProjectType, setCurrentProjectType] = useState('General');
+
+  // Email state (collected naturally within conversation, no gate)
+  const [userEmail, setUserEmail] = useState<string>(() => loadSavedEmail());
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [emailCaptureInput, setEmailCaptureInput] = useState('');
+  const emailCaptureRef = useRef<HTMLInputElement>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sessionEndSentRef = useRef(false);
   const apiBase = widgetUrl || '';
 
   const scrollToBottom = useCallback(() => {
@@ -251,7 +317,9 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [messages, isLoading, showLeadForm, scrollToBottom]);
-  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 120); }, []);
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 120);
+  }, []);
 
   // Persist chat history to localStorage; trim when too long
   useEffect(() => {
@@ -268,6 +336,54 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
     localStorage.setItem(STORAGE_LEAD_KEY, String(leadSubmitted));
   }, [leadSubmitted]);
 
+  // Persist email
+  useEffect(() => {
+    if (typeof window === 'undefined' || !userEmail) return;
+    localStorage.setItem(STORAGE_EMAIL_KEY, userEmail);
+  }, [userEmail]);
+
+  // Send session end on page unload (beforeunload)
+  useEffect(() => {
+    function handleUnload() {
+      if (sessionEndSentRef.current) return;
+      if (messages.length < 2) return; // no real conversation
+      sessionEndSentRef.current = true;
+
+      const payload = JSON.stringify({ sessionId, email: userEmail || undefined });
+      const url = `${apiBase}/api/chat/end`;
+
+      // Use sendBeacon for reliable fire-and-forget on page close
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: 'application/json' });
+        navigator.sendBeacon(url, blob);
+      } else {
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    }
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [sessionId, userEmail, messages.length, apiBase]);
+
+  // Handle chat close — send session end
+  function handleClose() {
+    if (!sessionEndSentRef.current && messages.length >= 2) {
+      sessionEndSentRef.current = true;
+      fetch(`${apiBase}/api/chat/end`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, email: userEmail || undefined }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+    onClose();
+  }
+
   async function sendMessage(text?: string) {
     const msg = (text || input).trim();
     if (!msg || isLoading) return;
@@ -282,12 +398,28 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
         body: JSON.stringify({
           message: msg, sessionId,
           history: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+          hasEmail: !!userEmail,
+          messageCount: messages.filter(m => m.role === 'user').length + 1,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply, timestamp: new Date() }]);
+
+      // If server detected an email in the user's message, save it
+      if (data.detectedEmail && !userEmail) {
+        setUserEmail(data.detectedEmail);
+        setShowEmailCapture(false);
+      }
+
+      // Show inline email input if AI just asked for email
+      if (data.askedForEmail && !userEmail) {
+        setTimeout(() => {
+          setShowEmailCapture(true);
+          setTimeout(() => emailCaptureRef.current?.focus(), 80);
+        }, 600);
+      }
 
       if (data.intent?.isLead && !showLeadForm && !leadSubmitted) {
         setCurrentProjectType(data.intent.projectType || 'General');
@@ -304,6 +436,17 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
     }
   }
 
+  function handleEmailCapture() {
+    const email = emailCaptureInput.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) return;
+    setUserEmail(email);
+    setShowEmailCapture(false);
+    setEmailCaptureInput('');
+    // Send email as a chat message — AI will acknowledge warmly
+    sendMessage(email);
+  }
+
   return (
     <>
       <style>{CSS}</style>
@@ -315,7 +458,7 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
             <img src="/weiblocks.png" alt="Weiblocks" style={{ width: '44px', height: '44px', objectFit: 'cover', display: 'block' }} />
           </div>
           <div className="wb-hinfo">
-            <div className="wb-hname">Weiblocks AI</div>
+            <div className="wb-hname">Nova — Weiblocks AI</div>
             <div className="wb-hstat">
               <span className="wb-hsdot" />
               Online · Replies instantly
@@ -325,7 +468,7 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
             <CalendarDays size={13} style={{ flexShrink: 0 }} />
             Book Call
           </a>
-          <button className="wb-hclose" onClick={onClose} aria-label="Close chat">
+          <button className="wb-hclose" onClick={handleClose} aria-label="Close chat">
             <X size={14} />
           </button>
         </div>
@@ -352,6 +495,7 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
               sessionId={sessionId}
               projectType={currentProjectType}
               widgetUrl={apiBase}
+              prefillEmail={userEmail}
               onClose={() => setShowLeadForm(false)}
               onSuccess={() => {
                 setLeadSubmitted(true);
@@ -364,10 +508,41 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
               }}
             />
           )}
+          {/* Inline email capture — shown after Nova asks for email */}
+          {showEmailCapture && !userEmail && (
+            <div className="wb-ec">
+              <div className="wb-ec-label">
+                <Mail size={12} style={{ flexShrink: 0 }} />
+                Your email address
+              </div>
+              <div className="wb-ec-row">
+                <input
+                  ref={emailCaptureRef}
+                  className="wb-ec-inp"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={emailCaptureInput}
+                  onChange={e => setEmailCaptureInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleEmailCapture(); }}}
+                />
+                <button
+                  className="wb-ec-btn"
+                  onClick={handleEmailCapture}
+                  disabled={!emailCaptureInput.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCaptureInput.trim())}
+                >
+                  Submit
+                </button>
+              </div>
+              <button className="wb-ec-skip" onClick={() => setShowEmailCapture(false)}>
+                Skip
+              </button>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Replies */}
+        {/* Quick Replies — only show before first user message */}
         {messages.length <= 1 && (
           <div className="wb-qzone">
             {QUICK_REPLIES.map(r => (

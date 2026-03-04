@@ -10,6 +10,9 @@ export interface ILead extends Document {
   subject?: string;
   message?: string;
   conversationId?: mongoose.Types.ObjectId;
+  chatSummary?: string;
+  source: 'form' | 'chat_detected';
+  emailSent: boolean;
   status: 'new' | 'contacted' | 'closed';
   createdAt: Date;
   updatedAt: Date;
@@ -17,8 +20,8 @@ export interface ILead extends Document {
 
 const LeadSchema = new Schema<ILead>(
   {
-    sessionId: { type: String, required: true, unique: true, index: true },
-    name: { type: String, required: true },
+    sessionId: { type: String, required: true, index: true },
+    name: { type: String },
     email: { type: String, required: true },
     phone: { type: String },
     projectType: { type: String, default: 'General' },
@@ -26,6 +29,9 @@ const LeadSchema = new Schema<ILead>(
     subject: { type: String },
     message: { type: String },
     conversationId: { type: Schema.Types.ObjectId, ref: 'Conversation' },
+    chatSummary: { type: String },
+    source: { type: String, enum: ['form', 'chat_detected'], default: 'form' },
+    emailSent: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ['new', 'contacted', 'closed'],
