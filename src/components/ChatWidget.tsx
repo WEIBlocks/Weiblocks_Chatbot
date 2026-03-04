@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { MessageCircle, X } from 'lucide-react';
 import ChatWindow from './ChatWindow';
 
 interface ChatWidgetProps {
@@ -195,7 +196,10 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
       <div className="wb-root">
         {showTooltip && !isOpen && (
           <div className="wb-tip">
-            <span style={{ color: '#F5A450', fontWeight: 700 }}>👋 Hi there! </span>
+            <span style={{ color: '#F5A450', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <MessageCircle size={14} style={{ verticalAlign: 'middle' }} />
+              Hi there!{' '}
+            </span>
             Got questions? I&apos;m here to help!
           </div>
         )}
@@ -210,7 +214,7 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
           {!isOpen && <><span className="wb-ring" /><span className="wb-ring wb-ring-2" /></>}
           {hasNotification && !isOpen && <span className="wb-badge">1</span>}
           {isOpen
-            ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
+            ? <X size={17} color="white" strokeWidth={2.5} />
             : <img src="/weiblocks.png" alt="Weiblocks" style={{ width: '34px', height: '34px', objectFit: 'cover', borderRadius: '50%' }} />
           }
         </button>

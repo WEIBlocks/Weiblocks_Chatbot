@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Bot, Blocks, Layers, Users, CalendarDays, X, Send } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import LeadForm from './LeadForm';
@@ -48,10 +49,10 @@ const WELCOME_MESSAGE: Message = {
 };
 
 const QUICK_REPLIES = [
-  { label: '🤖 AI Development', msg: 'Tell me about your AI development services' },
-  { label: '⛓️ Blockchain', msg: 'What blockchain solutions do you offer?' },
-  { label: '💎 DeFi & NFTs', msg: 'Do you build DeFi platforms and NFT marketplaces?' },
-  { label: '👥 Hire Devs', msg: 'I want to hire blockchain developers' },
+  { label: 'AI Development', icon: <Bot size={14} style={{ flexShrink: 0 }} />, msg: 'Tell me about your AI development services' },
+  { label: 'Blockchain', icon: <Blocks size={14} style={{ flexShrink: 0 }} />, msg: 'What blockchain solutions do you offer?' },
+  { label: 'DeFi & NFTs', icon: <Layers size={14} style={{ flexShrink: 0 }} />, msg: 'Do you build DeFi platforms and NFT marketplaces?' },
+  { label: 'Hire Devs', icon: <Users size={14} style={{ flexShrink: 0 }} />, msg: 'I want to hire blockchain developers' },
 ];
 
 const CSS = `
@@ -164,6 +165,7 @@ const CSS = `
     font-size: 11.5px; font-weight: 600;
     cursor: pointer; transition: all 0.18s;
     font-family: inherit; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px;
   }
   .wb-qbtn:hover {
     background: rgba(245,164,80,0.14);
@@ -320,12 +322,11 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
             </div>
           </div>
           <a href="https://weiblocks.io/contact" target="_blank" rel="noopener noreferrer" className="wb-hbook">
-            📅 Book Call
+            <CalendarDays size={13} style={{ flexShrink: 0 }} />
+            Book Call
           </a>
           <button className="wb-hclose" onClick={onClose} aria-label="Close chat">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M9 1L1 9M1 1l8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
+            <X size={14} />
           </button>
         </div>
 
@@ -371,7 +372,7 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
           <div className="wb-qzone">
             {QUICK_REPLIES.map(r => (
               <button key={r.label} className="wb-qbtn" onClick={() => sendMessage(r.msg)}>
-                {r.label}
+                {r.icon} {r.label}
               </button>
             ))}
           </div>
@@ -395,9 +396,7 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
             disabled={isLoading || !input.trim()}
             aria-label="Send message"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Send size={17} color="white" />
           </button>
         </div>
 

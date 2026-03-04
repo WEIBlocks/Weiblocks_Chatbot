@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Sparkles, X, Lock, Zap, Star } from 'lucide-react';
 
 interface LeadFormProps {
   sessionId: string;
@@ -90,8 +91,9 @@ export default function LeadForm({ sessionId, projectType, onClose, onSuccess, w
               width: '28px', height: '28px', borderRadius: '8px',
               background: 'linear-gradient(135deg, #F5A450, #BC403E)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '14px',
-            }}>✨</div>
+            }}>
+              <Sparkles size={15} color="white" />
+            </div>
             <span style={{ color: '#F5A450', fontWeight: 700, fontSize: '14px' }}>
               Let&apos;s Connect!
             </span>
@@ -103,8 +105,9 @@ export default function LeadForm({ sessionId, projectType, onClose, onSuccess, w
         <button onClick={onClose} style={{
           background: 'none', border: 'none',
           color: 'rgba(255,255,255,0.3)', cursor: 'pointer',
-          fontSize: '16px', padding: '2px', lineHeight: 1, marginLeft: '8px', flexShrink: 0,
-        }} aria-label="Close">✕</button>
+          padding: '2px', lineHeight: 1, marginLeft: '8px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }} aria-label="Close"><X size={16} /></button>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
@@ -185,9 +188,15 @@ export default function LeadForm({ sessionId, projectType, onClose, onSuccess, w
         display: 'flex', justifyContent: 'center', gap: '16px',
         color: 'rgba(255,255,255,0.2)', fontSize: '10.5px',
       }}>
-        <span>🔒 Secure</span>
-        <span>⚡ Fast Response</span>
-        <span>🌟 Free Consultation</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Lock size={11} /> Secure
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Zap size={11} /> Fast Response
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Star size={11} /> Free Consultation
+        </span>
       </div>
     </div>
   );
