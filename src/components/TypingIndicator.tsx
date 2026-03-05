@@ -44,9 +44,9 @@ export default function TypingIndicator() {
         `}</style>
       </div>
 
-      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
+      {/* <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
         typing...
-      </span>
+      </span> */}
     </div>
   );
 }

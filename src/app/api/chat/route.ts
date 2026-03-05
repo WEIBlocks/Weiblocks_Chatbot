@@ -3,6 +3,7 @@ import { openai, WEIBLOCKS_SYSTEM_PROMPT } from '@/lib/openai';
 import { callGemini } from '@/lib/gemini';
 import { connectDB } from '@/lib/mongodb';
 import { detectIntent } from '@/lib/intentDetector';
+import { findRelevantChunks, formatRagContext } from '@/lib/vectorSearch';
 import Conversation from '@/models/Conversation';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*' };
@@ -50,28 +51,41 @@ export async function POST(req: NextRequest) {
         content: m.content,
       }));
 
-    // Build dynamic system prompt — ask for email after first message if no lead intent
+    // ── RAG: fetch relevant chunks from MongoDB (non-blocking if fails) ───────
+    let ragContext = '';
+    try {
+      const chunks = await findRelevantChunks(message, 4);
+      ragContext = formatRagContext(chunks);
+    } catch (ragErr) {
+      // RAG failure should never block the chat — fall back to system prompt only
+      console.warn('[chat] RAG lookup failed, continuing without context:', ragErr);
+    }
+
+    // ── Build dynamic system prompt ───────────────────────────────────────────
     let systemPrompt = WEIBLOCKS_SYSTEM_PROMPT;
+
+    // Inject RAG context right after the base system prompt
+    if (ragContext) {
+      systemPrompt += ragContext;
+    }
+
     const shouldAskEmail = !hasEmail && !intent.isLead && messageCount === 1;
     if (shouldAskEmail) {
-      // First message, no high intent — ask for email naturally at the end of the reply
       systemPrompt += `\n\n## IMPORTANT — EMAIL COLLECTION
 This is the user's FIRST message and they haven't shared their email yet. After answering their question, end your reply by naturally asking for their email. Keep it brief and conversational — e.g.:
 - "By the way, what's the best email to reach you? I'd love to have our team follow up."
 - "What email should I use to send you more details?"
 Just one short sentence at the end. Do NOT be pushy.`;
     } else if (!hasEmail && messageCount >= 3) {
-      // Still no email after a few exchanges — stop asking
       systemPrompt += `\n\n## NOTE: The user hasn't shared their email. Do NOT ask for it again. Continue helping normally.`;
     }
 
+    // ── AI call ───────────────────────────────────────────────────────────────
     let reply = '';
 
     if (AI_PROVIDER === 'gemini') {
-      // ── Gemini 2.5 Flash ──────────────────────────────────────────
       reply = await callGemini(systemPrompt, cleanHistory, message);
     } else {
-      // ── OpenAI GPT-4o-mini ────────────────────────────────────────
       const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         { role: 'system', content: systemPrompt },
         ...cleanHistory,

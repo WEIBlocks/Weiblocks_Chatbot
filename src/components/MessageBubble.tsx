@@ -55,19 +55,21 @@ function LinkButton({ text, url }: { text: string; url: string }) {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '8px 16px',
-        margin: '4px 4px 4px 0',
+        padding: '7px 13px',
+        margin: '3px 3px 3px 0',
         background: 'rgba(245,164,80,0.1)',
         border: '1px solid rgba(245,164,80,0.35)',
         borderRadius: '100px',
         color: '#F5A450',
-        fontSize: '12.5px',
+        fontSize: '12px',
         fontWeight: 600,
         textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.18s',
         fontFamily: 'inherit',
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        maxWidth: '100%',
+        minWidth: 0,
         lineHeight: 1.4,
       }}
       onMouseEnter={e => {
@@ -85,7 +87,7 @@ function LinkButton({ text, url }: { text: string; url: string }) {
         t.style.boxShadow = 'none';
       }}
     >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
         <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
           stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
@@ -100,20 +102,41 @@ function renderContent(content: string) {
   const elements: React.ReactNode[] = [];
 
   lines.forEach((line, i) => {
-    // Extract markdown links from this line
     const { cleaned, links } = extractLinks(line);
-    if (links.length > 0) collectedLinks.push(...links);
+    const trimmed = cleaned.trim();
+    const isBulletLine = /^(\*|-|•)\s*$/.test(trimmed); // line is ONLY a bullet marker after link removal
+    const isNumberedLine = /^\d+\.\s*$/.test(trimmed);
 
-    // If line was ONLY a link (no other text), skip rendering it as a line
-    if (!cleaned.trim() && links.length > 0) return;
-
-    const html = linkify(
-      cleaned
+    // Inline markdown → HTML (bold, italic)
+    const toHtml = (text: string) => linkify(
+      text
         .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#F5A450;font-weight:700">$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
     );
 
-    if (cleaned.trim().startsWith('- ') || cleaned.trim().startsWith('• ')) {
+    // Case: bullet/numbered line whose text content was entirely a markdown link
+    // e.g. "- [Blog Title](url)"  →  render as bullet row with inline LinkButton
+    if (links.length > 0 && (isBulletLine || isNumberedLine || !trimmed)) {
+      elements.push(
+        <div key={i} style={{ display: 'flex', gap: '8px', marginTop: i > 0 ? '4px' : 0, alignItems: 'center', flexWrap: 'wrap' }}>
+          {links.map((link, j) => <LinkButton key={j} text={link.text} url={link.url} />)}
+        </div>
+      );
+      return;
+    }
+
+    // Line has both text and links — collect links for bottom buttons, render text normally
+    if (links.length > 0) collectedLinks.push(...links);
+
+    // ## or ### heading
+    if (/^#{1,3}\s/.test(trimmed)) {
+      const text = trimmed.replace(/^#{1,3}\s+/, '');
+      elements.push(
+        <p key={i} style={{ margin: '8px 0 3px', fontWeight: 700, color: '#F5A450', fontSize: '13px' }}
+          dangerouslySetInnerHTML={{ __html: toHtml(text) }} />
+      );
+    // Bullet: - item / * item / • item
+    } else if (/^(\*|-|•)\s/.test(trimmed)) {
       elements.push(
         <div key={i} style={{ display: 'flex', gap: '8px', marginTop: i > 0 ? '5px' : 0, alignItems: 'flex-start' }}>
           <span style={{
@@ -121,15 +144,33 @@ function renderContent(content: string) {
             background: '#F5A450', flexShrink: 0, marginTop: '7px',
             boxShadow: '0 0 4px rgba(245,164,80,0.5)',
           }} />
-          <span dangerouslySetInnerHTML={{ __html: html.replace(/^[-•]\s+/, '') }} />
+          <span dangerouslySetInnerHTML={{ __html: toHtml(trimmed.replace(/^[*\-•]\s+/, '')) }} />
         </div>
       );
-    } else if (line === '') {
+    // Numbered list: 1. item
+    } else if (/^\d+\.\s/.test(trimmed)) {
+      const num = trimmed.match(/^(\d+)\./)?.[1] ?? '';
+      const text = trimmed.replace(/^\d+\.\s+/, '');
+      elements.push(
+        <div key={i} style={{ display: 'flex', gap: '8px', marginTop: i > 0 ? '5px' : 0, alignItems: 'flex-start' }}>
+          <span style={{
+            minWidth: '18px', height: '18px', borderRadius: '50%',
+            background: 'rgba(245,164,80,0.18)', color: '#F5A450',
+            fontSize: '10px', fontWeight: 700, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginTop: '2px',
+          }}>{num}</span>
+          <span dangerouslySetInnerHTML={{ __html: toHtml(text) }} />
+        </div>
+      );
+    // Empty line → small spacer
+    } else if (trimmed === '') {
       elements.push(<div key={i} style={{ height: '6px' }} />);
+    // Normal paragraph
     } else {
       elements.push(
         <p key={i} style={{ margin: '1px 0', lineHeight: 1.55 }}
-          dangerouslySetInnerHTML={{ __html: html }} />
+          dangerouslySetInnerHTML={{ __html: toHtml(cleaned) }} />
       );
     }
   });
@@ -137,7 +178,7 @@ function renderContent(content: string) {
   // Render all collected link buttons at the bottom
   if (collectedLinks.length > 0) {
     elements.push(
-      <div key="link-buttons" style={{ display: 'flex', flexWrap: 'wrap', marginTop: '8px', gap: '2px' }}>
+      <div key="link-buttons" style={{ display: 'flex', flexWrap: 'wrap', marginTop: '8px', gap: '4px', minWidth: 0, overflow: 'hidden' }}>
         {collectedLinks.map((link, j) => (
           <LinkButton key={j} text={link.text} url={link.url} />
         ))}
@@ -179,6 +220,8 @@ export default function MessageBubble({ message }: { message: Message }) {
 
       <div style={{
         maxWidth: '80%',
+        minWidth: 0,
+        overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
         alignItems: isUser ? 'flex-end' : 'flex-start',
       }}>
