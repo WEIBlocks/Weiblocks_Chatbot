@@ -52,7 +52,7 @@ async function parseSitemap(url: string): Promise<string[]> {
 
 /**
  * Discover all page URLs from the WordPress sitemaps.
- * Handles both sitemap indexes (which link to child sitemaps) and regular sitemaps.
+ * Handles .... both sitemap indexes (which link to child sitemaps) and regular sitemaps.
  */
 async function discoverUrls(): Promise<string[]> {
   const seen = new Set<string>();
