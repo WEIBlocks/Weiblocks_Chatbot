@@ -52,8 +52,10 @@ export async function sendLeadEmail(opts: {
     ? `🔔 New Lead: ${opts.name || opts.email} — ${opts.subject || opts.projectType || 'General'}`
     : `💬 Chat Lead: ${opts.email} — ${opts.projectType || 'General'}`;
 
+  console.log(`[mailer] Sending lead email → ${TO()} | source=${opts.source} | email=${opts.email} | project=${opts.projectType || 'General'}`);
+
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: FROM(),
       to: TO(),
       subject: subjectLine,
@@ -94,7 +96,9 @@ export async function sendLeadEmail(opts: {
         </div>
       `,
     });
+    console.log(`[mailer] ✓ Email sent successfully | id=${result.data?.id} | to=${TO()}`);
   } catch (err) {
-    console.error('Email send error:', err);
+    console.error('[mailer] ✗ Email send failed:', err);
+    throw err;
   }
 }

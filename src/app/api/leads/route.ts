@@ -16,11 +16,15 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  const start = Date.now();
   try {
     const { sessionId, name, email, phone, projectType, budget, subject, message } =
       await req.json();
 
+    console.log(`[leads] New submission | session=${sessionId} | name=${name} | email=${email} | project=${projectType || 'General'}`);
+
     if (!sessionId || !name || !email) {
+      console.warn('[leads] Missing required fields — rejected');
       return NextResponse.json(
         { error: 'sessionId, name, and email are required' },
         { status: 400, headers: corsHeaders }
@@ -30,6 +34,7 @@ export async function POST(req: NextRequest) {
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.warn(`[leads] Invalid email format: ${email}`);
       return NextResponse.json(
         { error: 'Invalid email address' },
         { status: 400, headers: corsHeaders }
@@ -37,6 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     await connectDB();
+    console.log('[leads] DB connected');
 
     // Find the associated conversation
     const conversation = await Conversation.findOne({ sessionId });
@@ -82,6 +88,8 @@ export async function POST(req: NextRequest) {
       { upsert: true, new: true }
     );
 
+    console.log(`[leads] Lead upserted | leadId=${lead._id} | hasConversation=${!!conversation} | summaryLength=${chatSummary.length}`);
+
     // Send email with summary + transcript (non-blocking)
     sendLeadEmail({
       name,
@@ -94,14 +102,17 @@ export async function POST(req: NextRequest) {
       transcript,
       sessionId,
       source: 'form',
-    }).catch((err) => console.error('Lead email error:', err));
+    }).catch((err) => console.error('[leads] Email send error (non-fatal):', err));
+
+    const duration = Date.now() - start;
+    console.log(`[leads] ✓ Done in ${duration}ms | leadId=${lead._id}`);
 
     return NextResponse.json(
       { success: true, leadId: lead._id.toString() },
       { headers: corsHeaders }
     );
   } catch (error) {
-    console.error('Leads API error:', error);
+    console.error('[leads] ✗ API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500, headers: corsHeaders }
