@@ -50,7 +50,7 @@ interface ChatWindowProps {
 
 const WELCOME_MESSAGE: Message = {
   role: 'assistant',
-  content: "Hi! I'm Nova — Weiblocks' AI agent, your guide to blockchain & AI development.\n\nI can help you explore our services, discuss your project idea, or connect you with our team. What are you building?",
+  content: "Hi! I'm Wei — Weiblocks' AI agent, your guide to blockchain & AI development.\n\nI can help you explore our services, discuss your project idea, or connect you with our team. What are you building?",
   timestamp: new Date(),
 };
 
@@ -458,7 +458,7 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
             <img src="/weiblocks.png" alt="Weiblocks" style={{ width: '44px', height: '44px', objectFit: 'cover', display: 'block' }} />
           </div>
           <div className="wb-hinfo">
-            <div className="wb-hname">Nova — Weiblocks AI</div>
+            <div className="wb-hname">Wei - Weiblocks AI</div>
             <div className="wb-hstat">
               <span className="wb-hsdot" />
               Online · Replies instantly
@@ -508,7 +508,7 @@ export default function ChatWindow({ onClose, sessionId, widgetUrl }: ChatWindow
               }}
             />
           )}
-          {/* Inline email capture — shown after Nova asks for email */}
+          {/* Inline email capture — shown after Wei asks for email */}
           {showEmailCapture && !userEmail && (
             <div className="wb-ec">
               <div className="wb-ec-label">
