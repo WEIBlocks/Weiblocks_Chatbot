@@ -153,7 +153,7 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
 
         .wb-tip {
           position: fixed;
-          bottom: 104px; right: 24px;
+          bottom: 84px; right: 24px;
           background: rgba(8,8,18,0.96);
           backdrop-filter: blur(24px);
           border: 1px solid rgba(245,164,80,0.25);
@@ -182,10 +182,15 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
 
         .wb-window {
           position: fixed;
-          bottom: 104px; right: 24px;
+          /* sits above the FAB: FAB is at bottom:24px, height:52px → top of FAB = 76px
+             add 8px gap → window bottom = 84px */
+          bottom: 84px; right: 24px;
           width: 400px;
-          height: min(610px, calc(100dvh - 160px));
-          max-height: calc(100dvh - 160px);
+          /* cap height so header never scrolls off top of iframe:
+             iframe bottom=50px, window bottom=84px above iframe bottom,
+             so window top = 50 + 84 + height. Keep within viewport with generous margin. */
+          height: min(500px, calc(100dvh - 220px));
+          max-height: calc(100dvh - 220px);
           z-index: 2147483646;
           animation: wb-slideUp 0.32s cubic-bezier(0.16,1,0.3,1);
           border-radius: 28px;
@@ -198,11 +203,11 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
 
         /* Short screens — compress window but keep FAB visible */
         @media (max-height: 700px) {
-          .wb-window { bottom: 88px; height: calc(100dvh - 144px); }
-          .wb-tip    { bottom: 88px; }
+          .wb-window { bottom: 84px; height: calc(100dvh - 220px); }
+          .wb-tip    { bottom: 84px; }
         }
         @media (max-height: 500px) {
-          .wb-window { bottom: 80px; height: calc(100dvh - 132px); border-radius: 20px; }
+          .wb-window { bottom: 76px; height: calc(100dvh - 180px); border-radius: 20px; }
           .wb-tip    { display: none; }
         }
 

@@ -25,10 +25,11 @@ export async function GET(request: Request) {
   // So total iframe height needed = WIN_H + 104 + bottom_gap
   // We use bottom_gap=50px as requested, right_gap=20px
   var WIN_W        = 400;
-  var WIN_H        = 610;
-  var BOTTOM_GAP   = 50;  // gap from viewport bottom when open
-  var RIGHT_GAP    = 20;  // gap from viewport right when open
-  var SMALL_SCREEN = 460; // breakpoint for full-screen mode (matches ChatWidget.tsx)
+  var WIN_H        = 500;   // max chat window height (matches .wb-window in ChatWidget.tsx)
+  var WIN_BOTTOM   = 84;    // .wb-window bottom offset inside iframe (above FAB)
+  var BOTTOM_GAP   = 50;    // gap from viewport bottom when open
+  var RIGHT_GAP    = 20;    // gap from viewport right when open
+  var SMALL_SCREEN = 460;   // breakpoint for full-screen mode (matches ChatWidget.tsx)
 
   function isSmallScreen() {
     return window.innerWidth <= SMALL_SCREEN;
@@ -38,9 +39,9 @@ export async function GET(request: Request) {
     if (isSmallScreen()) {
       return { w: window.innerWidth, h: window.innerHeight, bottom: 0, right: 0, radius: '0' };
     }
-    // iframe must be tall enough to show: WIN_H (chat) + 104px (wb-window bottom offset) + BOTTOM_GAP
+    // iframe height = WIN_H (chat window) + WIN_BOTTOM (space below window for FAB) + BOTTOM_GAP
     var iW = Math.min(WIN_W + RIGHT_GAP, window.innerWidth);
-    var iH = Math.min(WIN_H + 104 + BOTTOM_GAP, window.innerHeight);
+    var iH = Math.min(WIN_H + WIN_BOTTOM + BOTTOM_GAP, window.innerHeight);
     return { w: iW, h: iH, bottom: BOTTOM_GAP, right: RIGHT_GAP, radius: '28px' };
   }
 
