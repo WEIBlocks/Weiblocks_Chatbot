@@ -95,21 +95,45 @@ export async function GET(request: Request) {
 
       if (e.data === 'wb:open') {
         chatOpen = true;
-        // Enable full iframe interaction for the open chat window
+        // Shrink iframe to only cover the chat window + FAB area (bottom-right)
+        // so the rest of the host page remains fully interactive.
+        // Chat window: 400px wide, ~610px tall, positioned bottom:0 right:0 with 24px margin
+        var chatW = Math.min(424, window.innerWidth);
+        var chatH = Math.min(660, window.innerHeight);
+        iframe.style.width  = chatW + 'px';
+        iframe.style.height = chatH + 'px';
+        iframe.style.top    = 'auto';
+        iframe.style.left   = 'auto';
+        iframe.style.bottom = '0';
+        iframe.style.right  = '0';
         iframe.style.pointerEvents = 'all';
         iframe.style.zIndex = '2147483645';
-        // Show overlay so clicks outside the chat window bubble to host button
+        // Show overlay behind iframe so clicks outside the chat area close it
         overlay.style.display = 'block';
-        // Hide host FAB (iframe's own X button handles closing)
         fab.style.display = 'none';
       } else if (e.data === 'wb:close') {
         chatOpen = false;
-        // Disable iframe — host page fully interactive again
+        // Restore full-viewport size but keep pointer-events:none
+        iframe.style.width  = '100%';
+        iframe.style.height = '100%';
+        iframe.style.top    = '0';
+        iframe.style.left   = '0';
+        iframe.style.bottom = '0';
+        iframe.style.right  = '0';
         iframe.style.pointerEvents = 'none';
         iframe.style.zIndex = '2147483644';
         overlay.style.display = 'none';
         fab.style.display = 'flex';
       }
+    });
+
+    // Recalculate iframe size on window resize while chat is open
+    window.addEventListener('resize', function() {
+      if (!chatOpen) return;
+      var chatW = Math.min(424, window.innerWidth);
+      var chatH = Math.min(660, window.innerHeight);
+      iframe.style.width  = chatW + 'px';
+      iframe.style.height = chatH + 'px';
     });
   }
 
