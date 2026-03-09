@@ -33,13 +33,22 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
     setSessionId(getOrCreateSessionId());
     const t1 = setTimeout(() => setShowTooltip(true), 3000);
     const t2 = setTimeout(() => setShowTooltip(false), 8000);
+    // Tell parent: chat is closed on load — but FAB needs pointer-events
+    // We use a special message so the parent can target just the FAB area
+    try { window.parent.postMessage('wb:close', '*'); } catch {}
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  function postState(open: boolean) {
+    try { window.parent.postMessage(open ? 'wb:open' : 'wb:close', '*'); } catch {}
+  }
+
   function toggleChat() {
-    setIsOpen(prev => !prev);
+    const next = !isOpen;
+    setIsOpen(next);
     setHasNotification(false);
     setShowTooltip(false);
+    postState(next);
   }
 
   if (!mounted) return null;
@@ -206,7 +215,7 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
 
         {isOpen && (
           <div className="wb-window">
-            <ChatWindow onClose={() => setIsOpen(false)} sessionId={sessionId} widgetUrl={widgetUrl} />
+            <ChatWindow onClose={() => { setIsOpen(false); postState(false); }} sessionId={sessionId} widgetUrl={widgetUrl} />
           </div>
         )}
 
