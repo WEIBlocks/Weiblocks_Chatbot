@@ -49,13 +49,21 @@ export async function GET(request: Request) {
   }
 
   function applyRect(iframe, r) {
-    iframe.style.width   = r.width  + 'px';
-    iframe.style.height  = r.height + 'px';
-    iframe.style.bottom  = r.bottom + 'px';
-    iframe.style.right   = r.right  + 'px';
-    iframe.style.top     = 'auto';
-    iframe.style.left    = 'auto';
-    iframe.style.inset   = 'auto';
+    // Overwrite the full cssText each time so no stale top/left/inset values survive
+    iframe.style.cssText = [
+      'position:fixed',
+      'top:auto',
+      'left:auto',
+      'bottom:' + r.bottom + 'px',
+      'right:'  + r.right  + 'px',
+      'width:'  + r.width  + 'px',
+      'height:' + r.height + 'px',
+      'border:none',
+      'background:transparent',
+      'z-index:2147483646',
+      'pointer-events:all',
+      'overflow:hidden'
+    ].join(';');
   }
 
   function injectWidget() {
@@ -65,18 +73,8 @@ export async function GET(request: Request) {
     iframe.id = 'weiblocks-chat-frame';
     iframe.src = WIDGET_URL + '/widget';
 
-    // Start sized to just the FAB — pointer-events:all so FAB is always clickable.
-    // The rest of the host page is never covered so it stays fully interactive.
-    iframe.style.cssText = [
-      'position:fixed',
-      'border:none',
-      'background:transparent',
-      'z-index:2147483646',
-      'pointer-events:all'
-    ].join(';');
-
-    var fr = fabRect();
-    applyRect(iframe, fr);
+    // Start sized to just the FAB (bottom-right), fully clickable.
+    applyRect(iframe, fabRect());
 
     iframe.setAttribute('title', 'Weiblocks AI Assistant');
     iframe.setAttribute('allow', 'microphone');
