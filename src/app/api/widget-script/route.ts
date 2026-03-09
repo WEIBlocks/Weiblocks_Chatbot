@@ -12,62 +12,105 @@ export async function GET(request: Request) {
   window.__WeiblocksChatLoaded = true;
 
   var WIDGET_URL = '${widgetOrigin}';
+  var chatOpen = false;
 
   function injectWidget() {
     if (document.getElementById('weiblocks-chat-frame')) return;
 
+    // ── 1. Full-viewport iframe — ALWAYS pointer-events:none ──────────────
+    // It never blocks the host page. We control interactivity via the
+    // host-side elements below.
     var iframe = document.createElement('iframe');
     iframe.id = 'weiblocks-chat-frame';
     iframe.src = WIDGET_URL + '/widget';
     iframe.style.cssText = [
-      'position: fixed',
-      'inset: 0',
-      'width: 100%',
-      'height: 100%',
-      'border: none',
-      'background: transparent',
-      'z-index: 2147483646',
-      'pointer-events: none'
-    ].join('; ');
+      'position:fixed',
+      'inset:0',
+      'width:100%',
+      'height:100%',
+      'border:none',
+      'background:transparent',
+      'z-index:2147483644',
+      'pointer-events:none'
+    ].join(';');
     iframe.setAttribute('title', 'Weiblocks AI Assistant');
     iframe.setAttribute('allow', 'microphone');
     document.body.appendChild(iframe);
 
-    // Track whether the chat window is open
-    var chatOpen = false;
+    // ── 2. Transparent full-screen overlay (shown only when chat is open) ──
+    // Sits above the host page content but below the iframe.
+    // When the chat is open this element covers the page so clicks outside
+    // the chat window close it. When closed it is display:none.
+    var overlay = document.createElement('div');
+    overlay.id = 'weiblocks-overlay';
+    overlay.style.cssText = [
+      'position:fixed',
+      'inset:0',
+      'z-index:2147483643',
+      'background:transparent',
+      'display:none',
+      'pointer-events:all'
+    ].join(';');
+    overlay.addEventListener('click', function() {
+      // Click outside chat → close
+      iframe.contentWindow && iframe.contentWindow.postMessage('wb:forceclose', WIDGET_URL);
+    });
+    document.body.appendChild(overlay);
 
-    // When chat opens  → full iframe accepts events (chat window needs interaction)
-    // When chat closes → iframe is pointer-events:none so host page is never blocked.
-    //   Exception: the FAB zone (bottom-right 100×100px) is re-enabled on mousemove
-    //   so the user can always click the FAB to reopen the chat.
+    // ── 3. Host-side FAB button ───────────────────────────────────────────
+    // This is a real button in the host page — always clickable, always on top.
+    // It toggles the chat by messaging the iframe.
+    // It is hidden while the chat is open (the iframe's own X button handles closing).
+    var fab = document.createElement('button');
+    fab.id = 'weiblocks-fab-host';
+    fab.setAttribute('aria-label', 'Open Weiblocks AI Chat');
+    fab.style.cssText = [
+      'position:fixed',
+      'bottom:24px',
+      'right:24px',
+      'width:52px',
+      'height:52px',
+      'border-radius:50%',
+      'border:none',
+      'cursor:pointer',
+      'z-index:2147483647',
+      'background:transparent',
+      'padding:0',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'pointer-events:all'
+    ].join(';');
+    // Invisible — the visual FAB is rendered inside the iframe.
+    // This host-side button is purely a transparent hit-area on top.
+    fab.innerHTML = '<span style="display:block;width:52px;height:52px;border-radius:50%;background:transparent;"></span>';
+    fab.addEventListener('click', function() {
+      iframe.contentWindow && iframe.contentWindow.postMessage('wb:toggle', WIDGET_URL);
+    });
+    document.body.appendChild(fab);
+
+    // ── 4. Listen for state changes from the widget ───────────────────────
     window.addEventListener('message', function(e) {
       if (e.origin !== WIDGET_URL) return;
+
       if (e.data === 'wb:open') {
         chatOpen = true;
+        // Enable full iframe interaction for the open chat window
         iframe.style.pointerEvents = 'all';
+        iframe.style.zIndex = '2147483645';
+        // Show overlay so clicks outside the chat window bubble to host button
+        overlay.style.display = 'block';
+        // Hide host FAB (iframe's own X button handles closing)
+        fab.style.display = 'none';
       } else if (e.data === 'wb:close') {
         chatOpen = false;
+        // Disable iframe — host page fully interactive again
         iframe.style.pointerEvents = 'none';
+        iframe.style.zIndex = '2147483644';
+        overlay.style.display = 'none';
+        fab.style.display = 'flex';
       }
     });
-
-    // Mousemove: enable pointer-events on the iframe only while the cursor
-    // is hovering the FAB zone (bottom-right 100×100px) and the chat is closed.
-    document.addEventListener('mousemove', function(ev) {
-      if (chatOpen) return; // chat open → already 'all', do nothing
-      var fromRight  = window.innerWidth  - ev.clientX;
-      var fromBottom = window.innerHeight - ev.clientY;
-      iframe.style.pointerEvents = (fromRight <= 100 && fromBottom <= 100) ? 'all' : 'none';
-    });
-
-    // Touch: same logic for mobile tap on the FAB
-    document.addEventListener('touchstart', function(ev) {
-      if (chatOpen) return;
-      var t = ev.touches[0];
-      var fromRight  = window.innerWidth  - t.clientX;
-      var fromBottom = window.innerHeight - t.clientY;
-      iframe.style.pointerEvents = (fromRight <= 100 && fromBottom <= 100) ? 'all' : 'none';
-    }, { passive: true });
   }
 
   if (document.readyState === 'loading') {
@@ -81,7 +124,7 @@ export async function GET(request: Request) {
   return new NextResponse(script, {
     headers: {
       'Content-Type': 'application/javascript',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'no-cache',
       'Access-Control-Allow-Origin': '*',
     },
   });

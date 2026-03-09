@@ -33,10 +33,29 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
     setSessionId(getOrCreateSessionId());
     const t1 = setTimeout(() => setShowTooltip(true), 3000);
     const t2 = setTimeout(() => setShowTooltip(false), 8000);
-    // Tell parent: chat is closed on load — but FAB needs pointer-events
-    // We use a special message so the parent can target just the FAB area
+    // Tell host: closed on load
     try { window.parent.postMessage('wb:close', '*'); } catch {}
     return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  // Listen for messages from the host page (widget-script)
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.data === 'wb:toggle') {
+        setIsOpen(prev => {
+          const next = !prev;
+          try { window.parent.postMessage(next ? 'wb:open' : 'wb:close', '*'); } catch {}
+          if (!next) { setShowTooltip(false); }
+          setHasNotification(false);
+          return next;
+        });
+      } else if (e.data === 'wb:forceclose') {
+        setIsOpen(false);
+        try { window.parent.postMessage('wb:close', '*'); } catch {}
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
   }, []);
 
   function postState(open: boolean) {
