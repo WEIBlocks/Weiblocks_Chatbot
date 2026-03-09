@@ -38,6 +38,25 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  // Listen for messages from the host page (widget-script)
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.data === 'wb:toggle') {
+        setIsOpen(prev => {
+          const next = !prev;
+          try { window.parent.postMessage(next ? 'wb:open' : 'wb:close', '*'); } catch {}
+          if (!next) { setShowTooltip(false); }
+          setHasNotification(false);
+          return next;
+        });
+      } else if (e.data === 'wb:forceclose') {
+        setIsOpen(false);
+        try { window.parent.postMessage('wb:close', '*'); } catch {}
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   function postState(open: boolean) {
     try { window.parent.postMessage(open ? 'wb:open' : 'wb:close', '*'); } catch {}
