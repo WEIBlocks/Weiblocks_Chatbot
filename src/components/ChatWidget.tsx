@@ -184,8 +184,8 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
           position: fixed;
           bottom: 104px; right: 24px;
           width: 400px;
-          height: min(610px, calc(100dvh - 120px));
-          max-height: calc(100dvh - 120px);
+          height: min(610px, calc(100dvh - 160px));
+          max-height: calc(100dvh - 160px);
           z-index: 2147483646;
           animation: wb-slideUp 0.32s cubic-bezier(0.16,1,0.3,1);
           border-radius: 28px;
@@ -196,17 +196,17 @@ export default function ChatWidget({ widgetUrl }: ChatWidgetProps) {
             inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
-        /* Short screens — shift window closer to fab */
+        /* Short screens — compress window but keep FAB visible */
         @media (max-height: 700px) {
-          .wb-window { bottom: 88px; height: calc(100dvh - 104px); }
+          .wb-window { bottom: 88px; height: calc(100dvh - 144px); }
           .wb-tip    { bottom: 88px; }
         }
         @media (max-height: 500px) {
-          .wb-window { bottom: 80px; height: calc(100dvh - 96px); border-radius: 20px; }
+          .wb-window { bottom: 80px; height: calc(100dvh - 132px); border-radius: 20px; }
           .wb-tip    { display: none; }
         }
 
-        /* Narrow screens — full screen, hide FAB when open */
+        /* Narrow screens (≤460px) — full screen, hide FAB when open */
         @media (max-width: 460px) {
           .wb-window { bottom:0;right:0;left:0;width:100%;height:100dvh;max-height:100dvh;border-radius:0; }
           .wb-fab    { bottom:16px;right:16px; }

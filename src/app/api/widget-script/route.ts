@@ -20,16 +20,28 @@ export async function GET(request: Request) {
   var FAB_BOTTOM  = 24;
   var FAB_RIGHT   = 24;
 
-  // Chat window: 400px wide, 610px tall, sitting 104px above bottom (matches .wb-window)
-  var WIN_W       = 400;
-  var WIN_H       = 610;
-  var WIN_GAP     = 20;  // gap between chat window and viewport edges
+  // Chat window: 400px wide, 610px tall (matches .wb-window in ChatWidget.tsx)
+  // .wb-window sits at bottom:104px; FAB sits at bottom:24px height:52px
+  // So total iframe height needed = WIN_H + 104 + bottom_gap
+  // We use bottom_gap=50px as requested, right_gap=20px
+  var WIN_W        = 400;
+  var WIN_H        = 610;
+  var BOTTOM_GAP   = 50;  // gap from viewport bottom when open
+  var RIGHT_GAP    = 20;  // gap from viewport right when open
+  var SMALL_SCREEN = 460; // breakpoint for full-screen mode (matches ChatWidget.tsx)
+
+  function isSmallScreen() {
+    return window.innerWidth <= SMALL_SCREEN;
+  }
 
   function openSize() {
-    // iframe covers: right gap + window width, and bottom gap + window height
-    var iW = Math.min(WIN_W + WIN_GAP, window.innerWidth);
-    var iH = Math.min(WIN_H + 104 + WIN_GAP, window.innerHeight); // 104 = wb-window bottom offset
-    return { w: iW, h: iH };
+    if (isSmallScreen()) {
+      return { w: window.innerWidth, h: window.innerHeight, bottom: 0, right: 0, radius: '0' };
+    }
+    // iframe must be tall enough to show: WIN_H (chat) + 104px (wb-window bottom offset) + BOTTOM_GAP
+    var iW = Math.min(WIN_W + RIGHT_GAP, window.innerWidth);
+    var iH = Math.min(WIN_H + 104 + BOTTOM_GAP, window.innerHeight);
+    return { w: iW, h: iH, bottom: BOTTOM_GAP, right: RIGHT_GAP, radius: '28px' };
   }
 
   function injectWidget() {
@@ -66,16 +78,20 @@ export async function GET(request: Request) {
 
     document.body.appendChild(iframe);
 
+    var isOpen = false;
+
     function applyOpen() {
+      isOpen = true;
       var sz = openSize();
       iframe.style.width        = sz.w + 'px';
       iframe.style.height       = sz.h + 'px';
-      iframe.style.bottom       = WIN_GAP + 'px';
-      iframe.style.right        = WIN_GAP + 'px';
-      iframe.style.borderRadius = '28px';
+      iframe.style.bottom       = sz.bottom + 'px';
+      iframe.style.right        = sz.right + 'px';
+      iframe.style.borderRadius = sz.radius;
     }
 
     function applyClose() {
+      isOpen = false;
       iframe.style.width        = closedW + 'px';
       iframe.style.height       = closedH + 'px';
       iframe.style.bottom       = closedB + 'px';
@@ -90,7 +106,7 @@ export async function GET(request: Request) {
     });
 
     window.addEventListener('resize', function() {
-      if (parseInt(iframe.style.right) === WIN_GAP) applyOpen();
+      if (isOpen) applyOpen();
     });
   }
 
