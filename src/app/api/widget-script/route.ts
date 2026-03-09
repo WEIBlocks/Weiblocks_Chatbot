@@ -37,12 +37,12 @@ export async function GET(request: Request) {
 
   function openSize() {
     if (isSmallScreen()) {
-      return { w: window.innerWidth, h: window.innerHeight, bottom: 0, right: 0 };
+      return { w: window.innerWidth, h: window.innerHeight, bottom: 0, right: 0, radius: '0' };
     }
     // iframe height = WIN_H (chat window) + WIN_BOTTOM (space below window for FAB) + BOTTOM_GAP
     var iW = Math.min(WIN_W + RIGHT_GAP, window.innerWidth);
     var iH = Math.min(WIN_H + WIN_BOTTOM + BOTTOM_GAP, window.innerHeight);
-    return { w: iW, h: iH, bottom: BOTTOM_GAP, right: RIGHT_GAP };
+    return { w: iW, h: iH, bottom: BOTTOM_GAP, right: RIGHT_GAP, radius: '28px' };
   }
 
   function injectWidget() {
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
       iframe.style.height       = sz.h + 'px';
       iframe.style.bottom       = sz.bottom + 'px';
       iframe.style.right        = sz.right + 'px';
-      iframe.style.borderRadius = '0'; // let inner .wb-window handle its own border-radius
+      iframe.style.borderRadius = sz.radius;
     }
 
     function applyClose() {
