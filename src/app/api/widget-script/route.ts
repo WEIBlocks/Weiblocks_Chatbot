@@ -23,11 +23,11 @@ export async function GET(request: Request) {
   // Chat window: 400px wide, 610px tall, sitting 104px above bottom (matches .wb-window)
   var WIN_W       = 400;
   var WIN_H       = 610;
-  var WIN_GAP     = 12;  // gap between chat window bottom edge and viewport bottom
+  var WIN_GAP     = 20;  // gap between chat window and viewport edges
 
   function openSize() {
-    // iframe covers: right margin + window width, and bottom margin + window + gap + fab + gap
-    var iW = Math.min(WIN_W + FAB_RIGHT, window.innerWidth);
+    // iframe covers: right gap + window width, and bottom gap + window height
+    var iW = Math.min(WIN_W + WIN_GAP, window.innerWidth);
     var iH = Math.min(WIN_H + 104 + WIN_GAP, window.innerHeight); // 104 = wb-window bottom offset
     return { w: iW, h: iH };
   }
@@ -71,8 +71,8 @@ export async function GET(request: Request) {
       iframe.style.width        = sz.w + 'px';
       iframe.style.height       = sz.h + 'px';
       iframe.style.bottom       = WIN_GAP + 'px';
-      iframe.style.right        = '0';
-      iframe.style.borderRadius = '0';
+      iframe.style.right        = WIN_GAP + 'px';
+      iframe.style.borderRadius = '28px';
     }
 
     function applyClose() {
@@ -90,7 +90,7 @@ export async function GET(request: Request) {
     });
 
     window.addEventListener('resize', function() {
-      if (parseInt(iframe.style.width) > closedW + 4) applyOpen();
+      if (parseInt(iframe.style.right) === WIN_GAP) applyOpen();
     });
   }
 
