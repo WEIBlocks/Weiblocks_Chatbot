@@ -22,12 +22,12 @@ export async function GET(request: Request) {
 
   // Chat window: 400px wide, 500px tall (matches .wb-window in ChatWidget.tsx)
   // .wb-window sits at bottom:84px; FAB sits at bottom:24px height:52px
-  // Iframe height when open must include: WIN_H + WIN_BOTTOM + FAB_BOTTOM + FAB_SIZE + bottom padding
-  // Iframe bottom when open = 0 so FAB at bottom:24px is always visible inside the iframe
+  // Iframe bottom = FAB_BOTTOM so the close button floats 24px above the screen edge (nice gap)
+  // Iframe height = WIN_H + WIN_BOTTOM + FAB_SIZE + padding — enough to contain chat window + FAB
   var WIN_W        = 400;
   var WIN_H        = 500;   // max chat window height (matches .wb-window in ChatWidget.tsx)
   var WIN_BOTTOM   = 84;    // .wb-window bottom offset inside iframe (above FAB)
-  var BOTTOM_GAP   = 0;     // iframe bottom offset from viewport when open (0 = flush to bottom)
+  var BOTTOM_GAP   = FAB_BOTTOM; // iframe bottom = same as FAB_BOTTOM → close button sits 24px from screen edge
   var RIGHT_GAP    = 20;    // gap from viewport right when open
   var SMALL_SCREEN = 460;   // breakpoint for full-screen mode (matches ChatWidget.tsx)
 
@@ -39,10 +39,11 @@ export async function GET(request: Request) {
     if (isSmallScreen()) {
       return { w: window.innerWidth, h: window.innerHeight, bottom: 0, right: 0, radius: '0' };
     }
-    // iframe height = WIN_H (chat window) + WIN_BOTTOM (space below window) + FAB_BOTTOM + FAB_SIZE + extra padding
-    // This ensures the FAB (position:fixed; bottom:24px; height:52px) is fully visible within the iframe
+    // iframe height = WIN_H + WIN_BOTTOM + FAB_SIZE + padding
+    // iframe bottom = FAB_BOTTOM (24px) → FAB inside at bottom:24px sits at 24+24=48px from viewport
+    // The close button is fully visible with a 24px gap from the screen edge
     var iW = Math.min(WIN_W + RIGHT_GAP, window.innerWidth);
-    var iH = Math.min(WIN_H + WIN_BOTTOM + FAB_BOTTOM + FAB_SIZE + 12, window.innerHeight);
+    var iH = Math.min(WIN_H + WIN_BOTTOM + FAB_SIZE + 12, window.innerHeight);
     return { w: iW, h: iH, bottom: BOTTOM_GAP, right: RIGHT_GAP, radius: '28px' };
   }
 
