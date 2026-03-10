@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
           ...(conversation && { conversationId: conversation._id }),
           chatSummary: chatSummary || undefined,
           source: 'form',
-          emailSent: true,
+          emailSent: false, // will be set to true only after email succeeds
         },
       },
       { upsert: true, new: true }
@@ -90,19 +90,26 @@ export async function POST(req: NextRequest) {
 
     console.log(`[leads] Lead upserted | leadId=${lead._id} | hasConversation=${!!conversation} | summaryLength=${chatSummary.length}`);
 
-    // Send email with summary + transcript (non-blocking)
-    sendLeadEmail({
-      name,
-      email,
-      phone,
-      projectType: projectType || 'General',
-      subject,
-      message,
-      summary: chatSummary || 'No chat conversation recorded.',
-      transcript,
-      sessionId,
-      source: 'form',
-    }).catch((err) => console.error('[leads] Email send error (non-fatal):', err));
+    // Send email with summary + transcript — await so we know if it worked
+    try {
+      await sendLeadEmail({
+        name,
+        email,
+        phone,
+        projectType: projectType || 'General',
+        subject,
+        message,
+        summary: chatSummary || 'No chat conversation recorded.',
+        transcript,
+        sessionId,
+        source: 'form',
+      });
+      // Only mark emailSent=true after actual success
+      await Lead.updateOne({ _id: lead._id }, { $set: { emailSent: true } });
+      console.log(`[leads] ✓ Email sent & lead updated`);
+    } catch (emailErr) {
+      console.error('[leads] ✗ Email failed — lead saved but emailSent=false:', emailErr);
+    }
 
     const duration = Date.now() - start;
     console.log(`[leads] ✓ Done in ${duration}ms | leadId=${lead._id}`);
