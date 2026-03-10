@@ -86,20 +86,26 @@ export async function POST(req: NextRequest) {
           projectType: conversation.projectType || 'General',
           chatSummary: summary,
           source: 'chat_detected',
-          emailSent: true,
+          emailSent: false,
           conversationId: conversation._id,
         });
       }
 
-      // Send the email alert
-      sendLeadEmail({
-        email: userEmail,
-        projectType: conversation.projectType || 'General',
-        summary,
-        transcript: msgs,
-        sessionId,
-        source: existingLead ? 'form' : 'chat_detected',
-      }).catch((err) => console.error('Chat end email error:', err));
+      // Send the email alert — await so Vercel doesn't kill the function early
+      try {
+        await sendLeadEmail({
+          email: userEmail,
+          projectType: conversation.projectType || 'General',
+          summary,
+          transcript: msgs,
+          sessionId,
+          source: existingLead ? 'form' : 'chat_detected',
+        });
+        // Mark emailSent=true only after success
+        await Lead.updateOne({ sessionId }, { $set: { emailSent: true } });
+      } catch (emailErr) {
+        console.error('[chat/end] ✗ Email failed:', emailErr);
+      }
     }
 
     return NextResponse.json({ success: true, summary }, { headers: corsHeaders });
